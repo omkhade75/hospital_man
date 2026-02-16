@@ -1,0 +1,7 @@
+project_id = "fjwwkjtfwlomvuqpochk"
+
+[functions.maya-chat]
+verify_jwt = true
+
+[functions.vapi-appointment-call]
+verify_jwt = true

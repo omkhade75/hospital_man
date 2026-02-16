@@ -1,0 +1,82 @@
+﻿
+> vite_react_shadcn_ts@0.0.0 lint
+> eslint .
+
+node.exe : 
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: (:Stri  
+  ng) [], RemoteException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+Oops! Something went wrong! 
+:(
+
+ESLint: 9.39.2
+
+Error 
+[ERR_MODULE_NOT_FOUND]: 
+Cannot find package 
+'@eslint/js' imported from D
+:\hospital_magaangment123-ma
+in\eslint.config.js
+    at 
+Object.getPackageJSONURL (no
+de:internal/modules/package_
+json_reader:316:9)
+    at packageResolve (node:
+internal/modules/esm/resolve
+:768:81)
+    at moduleResolve (node:i
+nternal/modules/esm/resolve:
+858:18)
+    at defaultResolve (node:
+internal/modules/esm/resolve
+:990:11)
+    at 
+#cachedDefaultResolve (node:
+internal/modules/esm/loader:
+718:20)
+    at #resolveAndMaybeBlock
+OnLoaderThread (node:interna
+l/modules/esm/loader:735:38)
+    at 
+ModuleLoader.resolveSync (no
+de:internal/modules/esm/load
+er:764:52)
+    at #resolve (node:intern
+al/modules/esm/loader:700:17
+)
+    at ModuleLoader.getOrCre
+ateModuleJob (node:internal/
+modules/esm/loader:620:35)
+    at ModuleJob.syncLink (n
+ode:internal/modules/esm/mod
+ule_job:143:33)
+(node:8480) [MODULE_TYPELESS
+_PACKAGE_JSON] Warning: 
+Module type of file:///D:/ho
+spital_magaangment123-main/e
+slint.config.js?mtime=177081
+0909304 is not specified 
+and it doesn't parse as 
+CommonJS.
+Reparsing as ES module 
+because module syntax was 
+detected. This incurs a 
+performance overhead.
+To eliminate this warning, 
+add "type": "module" to D:\h
+ospital_magaangment123-main\
+package.json.
+(Use `node --trace-warnings 
+...` to show where the 
+warning was created)
