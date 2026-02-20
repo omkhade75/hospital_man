@@ -232,7 +232,7 @@ IMPORTANT: You must detect the language the user is speaking (English, Hindi, or
 Do not just translate, but adopt the persona appropriate for that language. Start in English but switch IMMEDIATELY if they speak Hindi or Marathi.
 `;
 
-        console.log('Initiating Vapi call...');
+        console.log(`Initiating Vapi call for customer ${name} at ${normalizedPhone}...`);
 
         const vapiResponse = await fetch('https://api.vapi.ai/call/phone', {
             method: 'POST',
@@ -241,7 +241,7 @@ Do not just translate, but adopt the persona appropriate for that language. Star
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                phoneNumberId: VAPI_PHONE_NUMBER_ID, // Use environment variable
+                phoneNumberId: VAPI_PHONE_NUMBER_ID,
                 customer: {
                     number: normalizedPhone,
                     name: name,
@@ -262,6 +262,13 @@ Do not just translate, but adopt the persona appropriate for that language. Star
                         provider: 'playht',
                         voiceId: 'jennifer'
                     },
+                    // Trial Account Optimizations
+                    voicemailDetection: {
+                        enabled: false
+                    },
+                    hipaaEnabled: false,
+                    maxDurationSeconds: 1800, // 30 minutes max
+                    recordingEnabled: true,
                 },
             }),
         });
