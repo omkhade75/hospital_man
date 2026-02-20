@@ -58,107 +58,25 @@ const CallbacksPage = () => {
   });
 
   const triggerAICall = async (callback: any) => {
-    const VAPI_PRIVATE_KEY = import.meta.env.VITE_VAPI_PRIVATE_KEY;
-    const PHONE_NUMBER_ID = import.meta.env.VITE_VAPI_PHONE_NUMBER_ID;
-
-    if (!VAPI_PRIVATE_KEY) {
-      toast.error("Missing VITE_VAPI_PRIVATE_KEY in .env file.");
-      return;
-    }
-
-    if (!PHONE_NUMBER_ID) {
-      toast.error("Missing VITE_VAPI_PHONE_NUMBER_ID in .env file.");
-      return;
-    }
-
     const toastId = toast.loading("Initiating AI Call...");
 
-    // Normalize phone number to E.164 format
-    let phoneNumber = callback.phone.trim().replace(/\s+/g, '');
-    if (!phoneNumber.startsWith('+')) {
-      if (phoneNumber.length === 10) {
-        phoneNumber = '+91' + phoneNumber;
-      } else if (phoneNumber.startsWith('91') && phoneNumber.length === 12) {
-        phoneNumber = '+' + phoneNumber;
-      }
-    }
-
-    console.log("Calling Vapi with transient assistant for:", phoneNumber);
-
     try {
-      const apiUrl = "/api/vapi/call";
+      console.log("Invoking vapi-callback-request for:", callback.id);
 
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${VAPI_PRIVATE_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          phoneNumberId: PHONE_NUMBER_ID,
-          // DO NOT send assistantId -> this makes it a "Transient Assistant"
-          customer: {
-            number: phoneNumber,
-            name: callback.name
-          },
-          assistant: {
-            name: "Maya Callback Agent",
-            firstMessage: `Hello, I am Maya from Star Hospital. Am I speaking with ${callback.name}?`,
-            transcriber: {
-              provider: "deepgram",
-              model: "nova-2",
-              language: "en-IN"
-            },
-            voice: {
-              provider: "11labs",
-              voiceId: "21m00Tcm4TlvDq8ikWAM", // Rachel (Standard 11Labs voice)
-              stability: 0.5,
-              similarityBoost: 0.75
-            },
-            model: {
-              provider: "openai",
-              model: "gpt-4o-mini",
-              messages: [
-                {
-                  role: "system",
-                  content: `You are Maya, a friendly and professional receptionist for Star Hospital.
-                  You are calling to follow up on a callback request from a patient.
-                  
-                  Patient Name: ${callback.name}
-                  
-                  Instructions:
-                  1. You've already introduced yourself in the first message.
-                  2. Ask how you can help the patient.
-                  3. Be polite, warm, and concise in your responses.
-                  4. Always maintain a professional yet friendly tone.
-                  5. If they have medical questions, offer to book an appointment with a doctor.
-                  `
-                }
-              ]
-            }
-          }
-        })
+      const { data, error } = await supabase.functions.invoke('vapi-callback-request', {
+        body: { callbackId: callback.id }
       });
 
-      console.log("Vapi status:", response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Vapi Success:", data);
-        toast.success("AI Call Initiated! Maya should speak shortly.", { id: toastId });
-      } else {
-        const errorText = await response.text();
-        console.error("Vapi Error body:", errorText);
-        try {
-          const errorData = JSON.parse(errorText);
-          toast.error(`Error: ${errorData.message || response.statusText}`, { id: toastId });
-        } catch (e) {
-          toast.error(`Error (Status: ${response.status})`, { id: toastId });
-        }
+      if (error) {
+        console.error("Edge Function Error:", error);
+        throw new Error(error.message || "Failed to initiate call");
       }
+
+      console.log("Vapi response:", data);
+      toast.success("AI Call Initiated! Maya should speak shortly.", { id: toastId });
     } catch (error: any) {
       console.error("Call Error:", error);
-      toast.error(`Network error: ${error.message}`, { id: toastId });
+      toast.error(`Error: ${error.message}`, { id: toastId });
     }
   };
 

@@ -37,6 +37,7 @@ Deno.serve(async (req: Request) => {
 
     try {
         const VAPI_API_KEY = Deno.env.get('VAPI_API_KEY');
+        const VAPI_PHONE_NUMBER_ID = Deno.env.get('VAPI_PHONE_NUMBER_ID');
         const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
         const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
         const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -194,7 +195,17 @@ Deno.serve(async (req: Request) => {
             );
         }
 
-        console.log(`Processing callback for ${name} (${phoneNumber})`);
+        // Normalize phone number
+        let normalizedPhone = phoneNumber.trim().replace(/\s+/g, '');
+        if (!normalizedPhone.startsWith('+')) {
+            if (normalizedPhone.length === 10) {
+                normalizedPhone = '+91' + normalizedPhone;
+            } else if (normalizedPhone.startsWith('91') && normalizedPhone.length === 12) {
+                normalizedPhone = '+' + normalizedPhone;
+            }
+        }
+
+        console.log(`Processing callback for ${name} (${normalizedPhone})`);
 
         // ============================================
         // Make Vapi Call
@@ -230,9 +241,9 @@ Do not just translate, but adopt the persona appropriate for that language. Star
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                phoneNumberId: undefined, // Uses default
+                phoneNumberId: VAPI_PHONE_NUMBER_ID, // Use environment variable
                 customer: {
-                    number: phoneNumber,
+                    number: normalizedPhone,
                     name: name,
                 },
                 assistant: {

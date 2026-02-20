@@ -8,5 +8,8 @@
         "preview": "npm run preview --prefix frontend",
         "backend": "npm start --prefix backend",
         "install:all": "npm install && npm install --prefix frontend && npm install --prefix backend"
+    },
+    "devDependencies": {
+        "@supabase/supabase-js": "^2.97.0"
     }
 }
