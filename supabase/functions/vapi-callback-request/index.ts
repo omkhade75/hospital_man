@@ -159,79 +159,9 @@ Deno.serve(async (req: Request) => {
         console.log(`Initiating callback call to ${name} at ${normalizedPhone}`);
 
         // ============================================
-        // Vapi Call - FULLY INLINE ASSISTANT
+        // Make Vapi Call using the pre-configured assistant
         // ============================================
-        const firstMessage = `Namaste! Main Star Hospital se Maya bol rahi hoon. Kya aap ${name} ji se baat ho sakti hai? Aapne humse callback request ki thi. Main aapki kaise madad kar sakti hoon?`;
-
-        const systemPrompt = `You are Maya, a warm and professional AI receptionist at Star Hospital.
-
-You are calling ${name} because they requested a callback.
-Reason for their callback: ${reason}
-
-YOUR TASK:
-1. Warmly greet them and confirm you're speaking with the right person.
-2. Ask how you can help them.
-3. Answer questions about appointments, doctors, timings, reports, or general hospital info.
-4. If they need a human staff member, say "Hum aapko jaldi callback karenge" and end politely.
-
-LANGUAGE:
-- Speak naturally in Hindi/Hinglish (mix of Hindi and English like Indians speak daily).
-- If they speak English, switch to clear Indian-accented English.
-- Use natural phrases: "haan ji", "bilkul", "zaroor", "koi baat nahi", "shukriya".
-
-HOSPITAL INFO:
-- Name: Star Hospital (also called Medicare)
-- Emergency: 102
-- Services: Cardiology, Orthopedics, General Medicine, Gynecology, Pediatrics, and more.
-
-Keep responses SHORT (1-2 sentences). Do NOT say you are an AI.`;
-
-        const vapiPayload = {
-            phoneNumberId: VAPI_PHONE_NUMBER_ID,
-            customer: {
-                number: normalizedPhone,
-                name: name,
-            },
-            assistant: {
-                name: "Maya-Callback",
-                firstMessage: firstMessage,
-                firstMessageMode: "assistant-speaks-first",
-                model: {
-                    provider: "openai",
-                    model: "gpt-4o-mini",
-                    temperature: 0.7,
-                    maxTokens: 150,
-                    messages: [
-                        {
-                            role: "system",
-                            content: systemPrompt
-                        }
-                    ]
-                },
-                voice: {
-                    provider: "openai",
-                    voiceId: "alloy",
-                },
-                transcriber: {
-                    provider: "deepgram",
-                    model: "nova-2",
-                    language: "hi",
-                    smartFormat: true,
-                },
-                endCallMessage: "Dhanyawad! Star Hospital mein aapka swagat hai. Namaste!",
-                endCallPhrases: [
-                    "goodbye", "bye", "alvida", "shukriya", "dhanyawad",
-                    "theek hai bye", "ok thanks bye", "namaste"
-                ],
-                voicemailDetection: {
-                    enabled: false
-                },
-                backgroundDenoisingEnabled: true,
-                maxDurationSeconds: 600,
-            }
-        };
-
-        console.log('Sending Vapi payload:', JSON.stringify(vapiPayload, null, 2));
+        console.log('Initiating Vapi callback call via AssistantId...');
 
         const vapiResponse = await fetch('https://api.vapi.ai/call/phone', {
             method: 'POST',
@@ -240,7 +170,7 @@ Keep responses SHORT (1-2 sentences). Do NOT say you are an AI.`;
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                phoneNumberId: VAPI_PHONE_NUMBER_ID,
+                phoneNumberId: VAPI_PHONE_NUMBER_ID!,
                 assistantId: "adaa3583-2d8a-483e-8337-f0b9c37ec16f",
                 customer: {
                     number: normalizedPhone,
@@ -273,7 +203,6 @@ Keep responses SHORT (1-2 sentences). Do NOT say you are an AI.`;
                 message: 'Callback call initiated successfully',
                 debug: {
                     to: normalizedPhone,
-                    firstMessage: firstMessage.slice(0, 80) + '...'
                 }
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

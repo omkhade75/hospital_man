@@ -288,81 +288,10 @@ Do NOT say you are an AI.`;
       timestamp: new Date().toISOString()
     });
 
-    const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/vapi-webhook`;
-
     // ============================================
-    // Make Vapi Call - FULLY INLINE ASSISTANT
-    // (No assistantId, no assistantOverrides to avoid silent call bugs)
+    // Make Vapi Call using the pre-configured assistant
     // ============================================
-    const vapiPayload = {
-      phoneNumberId: VAPI_PHONE_NUMBER_ID,
-      customer: {
-        number: normalizedPhone,
-        name: patientName,
-      },
-      assistant: {
-        name: "Maya-Hospital",
-        firstMessage: firstMessage,
-        firstMessageMode: "assistant-speaks-first",
-        serverUrl: WEBHOOK_URL,
-        model: {
-          provider: "openai",
-          model: "gpt-4o-mini",
-          temperature: 0.7,
-          maxTokens: 150,
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt
-            }
-          ],
-          tools: action === 'confirm' ? [
-            {
-              type: "function",
-              function: {
-                name: "confirmAppointment",
-                description: "Call this when the patient verbally agrees to confirm their appointment.",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    appointmentId: {
-                      type: "string",
-                      description: "The appointment ID to confirm"
-                    }
-                  },
-                  required: ["appointmentId"]
-                }
-              }
-            }
-          ] : [],
-        },
-        voice: {
-          provider: "openai",
-          voiceId: "alloy",
-        },
-        transcriber: {
-          provider: "deepgram",
-          model: "nova-2",
-          language: "hi",
-          smartFormat: true,
-        },
-        endCallMessage: "Dhanyawad! Star Hospital ki taraf se aapka din shubh ho. Namaste!",
-        endCallPhrases: [
-          "goodbye", "bye", "alvida", "theek hai shukriya", "dhanyawad",
-          "ok thanks", "okay bye", "kal milte hain"
-        ],
-        voicemailDetection: {
-          enabled: false
-        },
-        backgroundDenoisingEnabled: true,
-        analysisPlan: {
-          summaryPrompt: "Summarize what happened in this hospital appointment call in 1-2 sentences.",
-        },
-        maxDurationSeconds: 600,
-      },
-    };
-
-    console.log('Sending Vapi payload:', JSON.stringify(vapiPayload, null, 2));
+    console.log('Initiating Vapi call via AssistantId...');
 
     const vapiResponse = await fetch('https://api.vapi.ai/call/phone', {
       method: 'POST',
@@ -371,7 +300,7 @@ Do NOT say you are an AI.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        phoneNumberId: VAPI_PHONE_NUMBER_ID,
+        phoneNumberId: VAPI_PHONE_NUMBER_ID!,
         assistantId: "adaa3583-2d8a-483e-8337-f0b9c37ec16f",
         customer: {
           number: normalizedPhone,
