@@ -9,6 +9,7 @@ declare const Deno: {
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Content-Security-Policy': "default-src 'self'; frame-src 'self' https://*.supabase.co https://www.google.com https://google.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com; img-src 'self' https://i.ytimg.com https://img.youtube.com https://*.supabase.co data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co;",
 };
 
 Deno.serve(async (req: Request) => {
