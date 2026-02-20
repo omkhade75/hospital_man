@@ -212,7 +212,6 @@ const MayaChatbot = () => {
             provider: "11labs" as const,
             voiceId: "sarah"
           },
-          // @ts-expect-error - Vapi model configuration type mismatch
           model: {
             provider: "openai" as const,
             model: "gpt-4o-mini",

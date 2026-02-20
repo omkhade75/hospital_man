@@ -41,14 +41,14 @@ const Salaries = () => {
             // 2. Fetch Salaries (Handle error if table doesn't exist)
             let salaries: Array<{ id: string; user_id: string; salary: number }> = [];
             try {
-                const { data, error } = await supabase.from('staff_salaries').select('*');
+                const { data, error } = await (supabase.from('staff_salaries' as any) as any).select('*');
                 if (error) {
                     if (error.code === '42P01') { // undefined_table
                         setTableMissing(true);
                     }
                     throw error;
                 }
-                salaries = data || [];
+                salaries = (data as any) || [];
             } catch (err) {
                 console.warn("Could not fetch salaries:", err);
                 if (err && typeof err === 'object' && 'code' in err && err.code === '42P01') setTableMissing(true);
@@ -73,7 +73,7 @@ const Salaries = () => {
 
                 // Filter for staff only (has role or request)
                 if (!role && !request) return;
-                if (role === 'patient') return;
+                if ((role as string) === 'patient') return;
 
                 const profile = profileMap.get(userId);
                 const salaryRecord = salaryMap.get(userId);
@@ -102,8 +102,8 @@ const Salaries = () => {
             // Upsert salary
             // We need to know if we are inserting or updating, but upsert with unique key works best
             // Since we defined user_id as unique, we can use upsert
-            const { error } = await supabase
-                .from('staff_salaries')
+            const { error } = await (supabase
+                .from('staff_salaries' as any) as any)
                 .upsert({
                     user_id: userId,
                     salary: salary,
@@ -129,7 +129,7 @@ const Salaries = () => {
 
             // 1. Delete Salary Record
             if (!tableMissing) {
-                await supabase.from('staff_salaries').delete().eq('user_id', userId);
+                await (supabase.from('staff_salaries' as any) as any).delete().eq('user_id', userId);
             }
 
             // 2. Delete Role (Revokes access)

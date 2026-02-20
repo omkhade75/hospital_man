@@ -57,26 +57,27 @@ const CallbacksPage = () => {
     },
   });
 
-  const triggerAICall = async (callback: any) => {
-    const toastId = toast.loading("Initiating AI Call...");
-
+  const handleAICall = async (callbackId: string) => {
     try {
-      console.log("Invoking vapi-callback-request for:", callback.id);
-
-      const { data, error } = await supabase.functions.invoke('vapi-callback-request', {
-        body: { callbackId: callback.id }
-      });
+      const { data, error } = await supabase.functions.invoke(
+        "vapi-callback-request",
+        {
+          body: { callbackId }
+        }
+      );
 
       if (error) {
-        console.error("Edge Function Error:", error);
-        throw new Error(error.message || "Failed to initiate call");
+        console.error("AI Call Error:", error);
+        alert("Failed to initiate AI call");
+        return;
       }
 
-      console.log("Vapi response:", data);
-      toast.success("AI Call Initiated! Maya should speak shortly.", { id: toastId });
-    } catch (error: any) {
-      console.error("Call Error:", error);
-      toast.error(`Error: ${error.message}`, { id: toastId });
+      alert("AI Call started successfully!");
+      console.log("AI Call Response:", data);
+
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      alert("Something went wrong while initiating AI call.");
     }
   };
 
@@ -189,7 +190,7 @@ const CallbacksPage = () => {
                                   size="sm"
                                   variant="outline"
                                   className="text-purple-600 hover:bg-purple-50 border-purple-200"
-                                  onClick={() => triggerAICall(callback)}
+                                  onClick={() => handleAICall(callback.id)}
                                 >
                                   <Bot className="h-4 w-4 mr-1" /> AI Call
                                 </Button>
