@@ -203,6 +203,7 @@ const MayaChatbot = () => {
             voiceId: "aditi" // Indian English voice
           },
           transcriber: {
+            provider: "deepgram",
             language: "multi"
           }
         });

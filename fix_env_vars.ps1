@@ -2,7 +2,7 @@ $vars = @{
     "VITE_SUPABASE_URL"             = "https://fjwwkjtfwlomvuqpochk.supabase.co"
     "VITE_SUPABASE_PUBLISHABLE_KEY" = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqd3dranRmd2xvbXZ1cXBvY2hrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxODk0NzcsImV4cCI6MjA4Mzc2NTQ3N30.9ZWpneOBq84flxmTv1td3Y0EfA-WvMIskWaI4ux_ccc"
     "VITE_VAPI_PUBLIC_KEY"          = "02ead3b2-c6ec-44f4-a254-2a581a956a09"
-    "VITE_VAPI_ASSISTANT_ID"        = "adc24232-9015-4b7d-ab00-c3ff1619a8e6"
+    "VITE_VAPI_ASSISTANT_ID"        = "adaa3583-2d8a-483e-8337-f0b9c37ec16f"
     "VITE_HOSPITAL_PHONE_NUMBER"    = "+91-123-456-7890"
     "VITE_SUPABASE_PROJECT_ID"      = "fjwwkjtfwlomvuqpochk"
 }
