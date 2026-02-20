@@ -153,7 +153,6 @@ const MayaChatbot = () => {
     if (isCallActive) {
       vapiRef.current?.stop();
     } else {
-      const assistantId = import.meta.env.VITE_VAPI_ASSISTANT_ID;
       const publicKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
 
       if (!publicKey || publicKey === "your_vapi_public_key_here") {
@@ -165,73 +164,59 @@ const MayaChatbot = () => {
         return;
       }
 
-      const systemPrompt = `You are Maya, a professional Indian AI receptionist for Star Hospital.
-      
-      PERSONA:
-      - Speak in a warm, polite, and helpful Indian English accent.
-      - Use common Indian courtesies and greetings (e.g., Namaste).
-      - If the user speaks Hindi, switch to Hindi immediately with a natural accent.
-      - Be warm, empathetic, and professional.
+      const systemPrompt = `You are Maya, a warm and professional AI receptionist for Star Hospital in India.
 
-      Role:
-      - Assist with booking appointments (ask for doctor name and preferred time).
-      - Answer inquiries about hospital services, reports, and visiting hours.
-      
-      Hospital Info:
-      - Name: Star Hospital
-      - Emergency Contact: 102
-      - Main Line: ${import.meta.env.VITE_HOSPITAL_PHONE_NUMBER || "+91-123-456-7890"}
-      
-      LATENCY & ACCENT:
-      - Keep responses extremely concise for low latency.
-      - Do not mention you are an AI unnecessarily.`;
+PERSONA & LANGUAGE:
+- Always speak in natural Hinglish (a mix of Hindi and English, the way Indians speak daily).
+- Example: "Haan ji, main aapki help kar sakti hoon. Kaunse doctor ke saath appointment chahiye?"
+- If the user speaks only English, respond in clear, warm Indian-accented English.
+- Use natural Indian phrases: "ji", "haan", "bilkul", "zaroor", "koi baat nahi", "shukriya", "dhanyawad".
 
-      if (assistantId && assistantId !== "your_vapi_assistant_id_here") {
-        vapiRef.current?.start(assistantId, {
-          model: {
-            provider: "openai",
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt
-              }
-            ]
-          },
-          voice: {
-            provider: "11labs",
-            voiceId: "aditi" // Indian English voice
-          },
-          transcriber: {
-            provider: "deepgram",
-            language: "multi"
-          }
-        });
-      } else {
-        vapiRef.current?.start({
-          name: "Maya Web",
-          firstMessage: "Hello, I am Maya from Star Hospital. How can I help you regarding your health today?",
-          transcriber: {
-            provider: "deepgram",
-            model: "nova-2",
-            language: "multi"
-          },
-          voice: {
-            provider: "11labs" as const,
-            voiceId: "sarah"
-          },
-          model: {
-            provider: "openai" as const,
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt
-              }
-            ]
-          }
-        });
-      }
+ROLE & CAPABILITIES:
+- Help patients book appointments (ask for doctor name and preferred time).
+- Answer questions about hospital services, doctors, visiting hours, reports.
+- Provide emergency contact information when needed.
+- Be a warm, empathetic, and knowledgeable healthcare assistant.
+
+HOSPITAL INFO:
+- Hospital Name: Star Hospital (Also called Medicare)
+- Emergency: 102
+- Contact: ${import.meta.env.VITE_HOSPITAL_PHONE_NUMBER || "+91-123-456-7890"}
+- Departments: Cardiology, Orthopedics, General Medicine, Gynecology, Pediatrics, Neurology.
+
+BEHAVIOR RULES:
+- Keep every response SHORT (1-3 sentences maximum) to reduce latency.
+- Never say you are an AI. Just be helpful.
+- If you cannot answer, say "Main aapko staff se connect karti hoon."`;
+
+      // Always use a fully inline assistant for maximum reliability
+      vapiRef.current?.start({
+        name: "Maya-StarHospital",
+        firstMessage: "Namaste! Main Maya hoon, Star Hospital ki AI receptionist. Main aapki kaise madad kar sakti hoon aaj?",
+        firstMessageMode: "assistant-speaks-first" as const,
+        transcriber: {
+          provider: "deepgram" as const,
+          model: "nova-2",
+          language: "multi",
+        },
+        voice: {
+          provider: "playht" as const,
+          voiceId: "hindi-female",
+        },
+        model: {
+          provider: "openai" as const,
+          model: "gpt-4o-mini",
+          temperature: 0.7,
+          maxTokens: 150,
+          messages: [
+            {
+              role: "system" as const,
+              content: systemPrompt
+            }
+          ]
+        },
+        endCallMessage: "Dhanyawad! Star Hospital mein aapka swagat hai. Namaste!",
+      });
     }
   };
 

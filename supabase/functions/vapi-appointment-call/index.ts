@@ -1,5 +1,4 @@
 
-
 import { createClient } from "@supabase/supabase-js";
 
 // Deno env typings
@@ -9,8 +8,6 @@ declare const Deno: {
   };
   serve(handler: (req: Request) => Promise<Response> | Response): void;
 };
-
-
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,40 +37,40 @@ Deno.serve(async (req: Request) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const VAPI_PHONE_NUMBER_ID = Deno.env.get('VAPI_PHONE_NUMBER_ID');
 
     if (!VAPI_API_KEY) {
       console.error('VAPI_API_KEY not configured');
-      throw new Error('Service configuration error');
+      throw new Error('Service configuration error: Missing VAPI_API_KEY');
+    }
+
+    if (!VAPI_PHONE_NUMBER_ID) {
+      console.error('VAPI_PHONE_NUMBER_ID not configured');
+      throw new Error('Service configuration error: Missing VAPI_PHONE_NUMBER_ID');
     }
 
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
       console.error('Supabase credentials not configured');
-      throw new Error('Service configuration error');
+      throw new Error('Service configuration error: Missing Supabase credentials');
     }
 
     // ============================================
     // SECURITY: Authorization Check
     // ============================================
-
-    // Get the authorization header from the request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.warn('Unauthorized access attempt: No auth header');
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create a user-context client to verify the caller's identity
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } }
     });
 
-    // Get the authenticated user
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
-      console.warn('Unauthorized access attempt: Invalid token');
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -82,7 +79,6 @@ Deno.serve(async (req: Request) => {
 
     console.log(`Auth check passed for user: ${user.id}`);
 
-    // Check if user has a staff role using the user's context
     const { data: userRoles, error: rolesError } = await userClient
       .from('user_roles')
       .select('role')
@@ -97,10 +93,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Verify user has at least one staff role
     const hasStaffRole = userRoles?.some((r: UserRole) => STAFF_ROLES.includes(r.role));
     if (!hasStaffRole) {
-      console.warn(`Access denied for user ${user.id}: No staff role found`);
       return new Response(
         JSON.stringify({ error: 'Forbidden: Staff access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -113,7 +107,6 @@ Deno.serve(async (req: Request) => {
     // ============================================
     // Input Validation
     // ============================================
-
     let requestBody: AppointmentCallRequest;
     try {
       requestBody = await req.json();
@@ -126,242 +119,270 @@ Deno.serve(async (req: Request) => {
 
     const { appointmentId, action } = requestBody;
 
-    // Validate required fields
     if (!appointmentId || !action) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields: appointmentId and action' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Validate appointmentId is a valid UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(appointmentId)) {
       return new Response(
-        JSON.stringify({ error: 'Invalid request' }),
+        JSON.stringify({ error: 'Invalid appointmentId format' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Validate action is one of allowed values
     if (!['confirm', 'reminder', 'cancel'].includes(action)) {
       return new Response(
-        JSON.stringify({ error: 'Invalid action' }),
+        JSON.stringify({ error: 'Invalid action. Must be confirm, reminder, or cancel.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Processing ${action} call for appointment: ${appointmentId} by staff user ${user.id}`);
+    console.log(`Processing ${action} call for appointment: ${appointmentId}`);
 
     // ============================================
-    // Fetch Appointment (using service role after auth)
+    // Fetch Appointment Data
     // ============================================
-
-    // Now that we've verified the user is staff, use service role for data access
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch appointment details - try patient_appointments first
-    let appointment;
+    let appointment: Record<string, unknown> | null = null;
     let appointmentType = 'patient';
 
     const { data: patientAppointment } = await supabase
       .from('patient_appointments')
-      .select(`
-        *,
-        doctor:doctors(name, specialty),
-        department:departments(name)
-      `)
+      .select(`*, doctor:doctors(name, specialty), department:departments(name)`)
       .eq('id', appointmentId)
       .single();
 
     if (!patientAppointment) {
-      // Try regular appointments table
       const { data: regularAppointment } = await supabase
         .from('appointments')
-        .select(`
-          *,
-          patient:patients(name, phone),
-          doctor:doctors(name, specialty)
-        `)
+        .select(`*, patient:patients(name, phone), doctor:doctors(name, specialty)`)
         .eq('id', appointmentId)
         .single();
 
       if (!regularAppointment) {
-        // Return generic error to prevent enumeration
         console.warn(`Appointment not found: ${appointmentId}`);
         return new Response(
-          JSON.stringify({ error: 'Unable to process request' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Appointment not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-
       appointment = regularAppointment;
       appointmentType = 'regular';
     } else {
       appointment = patientAppointment;
     }
 
-    console.log('Appointment found:', { appointmentType, id: appointment.id });
+    console.log('Appointment found:', { appointmentType, id: appointment!.id });
 
-    // Get phone number based on appointment type
-    const phoneNumber = appointmentType === 'patient'
-      ? appointment.patient_phone
-      : appointment.patient?.phone;
+    // Extract patient info (appointment is guaranteed non-null here)
+    const appt = appointment!;
+    const phoneNumber = (appointmentType === 'patient'
+      ? appt.patient_phone
+      : (appt.patient as Record<string, unknown>)?.phone) as string | undefined;
 
     if (!phoneNumber) {
-      console.error('No phone number available for appointment');
       return new Response(
-        JSON.stringify({ error: 'Unable to process request: Missing contact information' }),
+        JSON.stringify({ error: 'No phone number found for this appointment' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Normalize phone number for Vapi/Twilio
-    let normalizedPhone = phoneNumber.trim().replace(/\s+/g, '');
+    // Normalize Indian phone number
+    let normalizedPhone = String(phoneNumber).trim().replace(/[\s\-()]/g, '');
     if (!normalizedPhone.startsWith('+')) {
-      if (normalizedPhone.length === 10) {
+      if (normalizedPhone.startsWith('0')) {
+        normalizedPhone = '+91' + normalizedPhone.slice(1);
+      } else if (normalizedPhone.length === 10) {
         normalizedPhone = '+91' + normalizedPhone;
       } else if (normalizedPhone.startsWith('91') && normalizedPhone.length === 12) {
         normalizedPhone = '+' + normalizedPhone;
       }
     }
 
-    // Get patient and doctor names
-    const patientName = appointmentType === 'patient'
-      ? appointment.patient_name
-      : appointment.patient?.name || 'Patient';
+    const patientName = (appointmentType === 'patient'
+      ? appt.patient_name
+      : (appt.patient as Record<string, unknown>)?.name || 'Patient') as string;
 
-    const doctorName = appointment.doctor?.name || 'your doctor';
-    const specialty = appointment.doctor?.specialty || '';
-    const departmentName = appointment.department?.name || '';
+    const doctor = appt.doctor as Record<string, unknown> | undefined;
+    const doctorName = doctor?.name as string || 'your doctor';
+    const specialty = doctor?.specialty as string || '';
+    const department = appt.department as Record<string, unknown> | undefined;
+    const departmentName = department?.name as string || '';
 
-    // Get appointment date/time
-    const appointmentDate = appointmentType === 'patient'
-      ? appointment.preferred_date
-      : appointment.appointment_date;
-    const appointmentTime = appointmentType === 'patient'
-      ? appointment.preferred_time
-      : appointment.appointment_time;
+    const appointmentDate = (appointmentType === 'patient'
+      ? appt.preferred_date
+      : appt.appointment_date) as string || 'your scheduled date';
+    const appointmentTime = (appointmentType === 'patient'
+      ? appt.preferred_time
+      : appt.appointment_time) as string || '';
 
-    // Build the call message based on action
-    let callMessage = '';
+    // ============================================
+    // Build Call Message (First Spoken Sentence)
+    // ============================================
+    let firstMessage = '';
+    let systemPrompt = '';
+
     switch (action) {
       case 'confirm':
-        callMessage = `Hello ${patientName}, this is Star Hospital calling to confirm your appointment with ${doctorName}${specialty ? `, ${specialty}` : ''}${departmentName ? ` in the ${departmentName} department` : ''}, scheduled for ${appointmentDate}${appointmentTime ? ` at ${appointmentTime}` : ''}. Please press 1 to confirm your appointment, or press 2 if you need to reschedule. Thank you for choosing Star Hospital.`;
+        firstMessage = `Namaste! Main Star Hospital se Maya bol rahi hoon. Kya aap ${patientName} ji bol rahe hain? Main aapka appointment confirm karne ke liye call kar rahi hoon jo ${doctorName} ke saath ${appointmentDate}${appointmentTime ? ' ko ' + appointmentTime + ' baje' : ''} scheduled hai. Kya aap confirm karna chahenge?`;
+        systemPrompt = `You are Maya, a warm and professional AI receptionist for Star Hospital, calling to confirm an appointment.
+
+KEY DETAILS:
+- Patient Name: ${patientName}
+- Doctor: ${doctorName}${specialty ? ' (' + specialty + ')' : ''}${departmentName ? ', ' + departmentName + ' department' : ''}
+- Date: ${appointmentDate}${appointmentTime ? ' at ' + appointmentTime : ''}
+- Appointment ID: ${appointmentId}
+
+YOUR GOAL: Confirm the appointment verbally with the patient.
+
+LANGUAGE RULES:
+- Start in Hindi/Hinglish (natural mix of Hindi and English like Indians speak).
+- If they respond in pure English, switch to English.
+- If they speak Hindi, stay in Hindi.
+- Use natural Indian speech patterns like "ji", "haan", "theek hai", "bilkul".
+
+BEHAVIOR:
+- If patient says YES/confirm/haan/theek hai → call the confirmAppointment tool with appointmentId: "${appointmentId}"
+- If patient wants to reschedule → say "Koi baat nahi, hamare staff member aapse jald hi contact karenge."
+- Keep responses SHORT and NATURAL (1-2 sentences max).
+- Be warm, helpful, and sound human.
+- Do NOT say you are an AI.`;
         break;
+
       case 'reminder':
-        callMessage = `Hello ${patientName}, this is a friendly reminder from Star Hospital about your upcoming appointment with ${doctorName}${specialty ? `, ${specialty}` : ''}, scheduled for ${appointmentDate}${appointmentTime ? ` at ${appointmentTime}` : ''}. Please arrive 15 minutes early. If you have any questions, please contact us. Thank you!`;
+        firstMessage = `Namaste ${patientName} ji! Main Star Hospital se Maya bol rahi hoon. Aapko yaad dilana chahti thi ki aapka appointment ${doctorName} ke saath ${appointmentDate}${appointmentTime ? ' ko ' + appointmentTime + ' baje' : ''} scheduled hai. Kripaya 15 minute pehle aa jayein. Shukriya!`;
+        systemPrompt = `You are Maya, a warm AI receptionist at Star Hospital, calling to remind a patient about their appointment.
+
+Patient: ${patientName}, Appointment with ${doctorName} on ${appointmentDate}${appointmentTime ? ' at ' + appointmentTime : ''}.
+
+LANGUAGE: Speak naturally in Hindi/Hinglish. Switch to English if they respond in English.
+Be brief, warm, and helpful. Do NOT say you are an AI.`;
         break;
+
       case 'cancel':
-        callMessage = `Hello ${patientName}, this is Star Hospital. We regret to inform you that your appointment with ${doctorName} scheduled for ${appointmentDate} has been cancelled. Please contact us to reschedule at your earliest convenience. We apologize for any inconvenience. Thank you.`;
+        firstMessage = `Namaste ${patientName} ji! Main Star Hospital se Maya bol rahi hoon. Aapko inform karna chahti thi ki ${doctorName} ke saath aapka ${appointmentDate} ka appointment unfortunately cancel ho gaya hai. Inconvenience ke liye maafi chahti hoon. Kripaya humse contact karein nayi appointment ke liye.`;
+        systemPrompt = `You are Maya, a warm AI receptionist at Star Hospital, informing a patient about a cancelled appointment.
+
+Patient: ${patientName}, Doctor: ${doctorName}, Date: ${appointmentDate}.
+
+Be empathetic and apologetic. Offer to help reschedule. Speak in Hindi/Hinglish.
+Do NOT say you are an AI.`;
         break;
     }
 
     // ============================================
     // Audit Log
     // ============================================
-    console.log('AUDIT: Call initiated', {
+    console.log('AUDIT: Initiating Vapi call', {
       staffUserId: user.id,
       staffRole: userRole,
-      appointmentId: appointment.id,
+      appointmentId,
       action,
       patientName,
+      normalizedPhone,
       timestamp: new Date().toISOString()
     });
 
-    console.log(`Initiating Vapi ${action} call to: ${normalizedPhone} for customer ${patientName}...`);
-
     const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/vapi-webhook`;
 
-    // Make the Vapi API call
+    // ============================================
+    // Make Vapi Call - FULLY INLINE ASSISTANT
+    // (No assistantId, no assistantOverrides to avoid silent call bugs)
+    // ============================================
+    const vapiPayload = {
+      phoneNumberId: VAPI_PHONE_NUMBER_ID,
+      customer: {
+        number: normalizedPhone,
+        name: patientName,
+      },
+      assistant: {
+        name: "Maya-Hospital",
+        firstMessage: firstMessage,
+        firstMessageMode: "assistant-speaks-first",
+        serverUrl: WEBHOOK_URL,
+        model: {
+          provider: "openai",
+          model: "gpt-4o-mini",
+          temperature: 0.7,
+          maxTokens: 150,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            }
+          ],
+          tools: action === 'confirm' ? [
+            {
+              type: "function",
+              function: {
+                name: "confirmAppointment",
+                description: "Call this when the patient verbally agrees to confirm their appointment.",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    appointmentId: {
+                      type: "string",
+                      description: "The appointment ID to confirm"
+                    }
+                  },
+                  required: ["appointmentId"]
+                }
+              }
+            }
+          ] : [],
+        },
+        voice: {
+          provider: "playht",
+          voiceId: "hindi-female",
+        },
+        transcriber: {
+          provider: "deepgram",
+          model: "nova-2",
+          language: "hi",
+          smartFormat: true,
+        },
+        endCallMessage: "Dhanyawad! Star Hospital ki taraf se aapka din shubh ho. Namaste!",
+        endCallPhrases: [
+          "goodbye", "bye", "alvida", "theek hai shukriya", "dhanyawad",
+          "ok thanks", "okay bye", "kal milte hain"
+        ],
+        voicemailDetection: {
+          enabled: false
+        },
+        backgroundDenoisingEnabled: true,
+        analysisPlan: {
+          summaryPrompt: "Summarize what happened in this hospital appointment call in 1-2 sentences.",
+        },
+        maxDurationSeconds: 600,
+      },
+    };
+
+    console.log('Sending Vapi payload:', JSON.stringify(vapiPayload, null, 2));
+
     const vapiResponse = await fetch('https://api.vapi.ai/call/phone', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${VAPI_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        assistantId: "adaa3583-2d8a-483e-8337-f0b9c37ec16f",
-        phoneNumberId: Deno.env.get('VAPI_PHONE_NUMBER_ID'),
-        customer: {
-          number: normalizedPhone,
-          name: patientName,
-        },
-        assistantOverrides: {
-          firstMessage: callMessage,
-          serverUrl: WEBHOOK_URL,
-          model: {
-            provider: 'openai',
-            model: 'gpt-4o-mini',
-            tools: [
-              {
-                type: "function",
-                function: {
-                  name: "confirmAppointment",
-                  description: "Confirms the appointment when the user says yes/confirms.",
-                  parameters: {
-                    type: "object",
-                    properties: {
-                      appointmentId: {
-                        type: "string",
-                        description: "The ID of the appointment to confirm."
-                      }
-                    },
-                    required: ["appointmentId"]
-                  }
-                }
-              }
-            ],
-            messages: [
-              {
-                role: 'system',
-                content: `You are Maya, a professional Indian hospital receptionist for Star Hospital. 
-                
-                PERSONA:
-                - Speak in a warm, polite, and helpful Indian English accent.
-                - Use common Indian courtesies.
-                - If the user speaks Hindi, switch to Hindi immediately with a natural accent.
-                
-                CONTEXT:
-                - Making a ${action} call for Appointment ID: ${appointmentId}.
-                
-                RULES:
-                1. If the patient confirms (says yes, okay, confirm, etc.), you MUST call the 'confirmAppointment' tool.
-                2. Respond in the same language as the user (English or Hindi).
-                3. Keep responses extremely concise for low latency.
-                4. Do not mention you are an AI.`
-              }
-            ]
-          },
-          voice: {
-            provider: '11labs',
-            voiceId: 'aditi', // Aditi is a high-quality Indian English voice
-            stability: 0.5,
-            similarityBoost: 0.75
-          },
-          transcriber: {
-            provider: 'deepgram',
-            model: 'nova-2',
-            language: 'multi'
-          },
-          // Latency Optimizations
-          backgroundDenoisingEnabled: true,
-          silenceTimeoutMs: 500,
-          maxDurationSeconds: 1200,
-          voicemailDetection: {
-            enabled: false
-          }
-        },
-      }),
+      body: JSON.stringify(vapiPayload),
     });
 
+    const responseText = await vapiResponse.text();
+    console.log(`Vapi response status: ${vapiResponse.status}`);
+    console.log(`Vapi response body: ${responseText}`);
+
     if (!vapiResponse.ok) {
-      const errorText = await vapiResponse.text();
-      console.error('Vapi API error:', vapiResponse.status, errorText);
-      throw new Error('Failed to initiate call');
+      console.error('Vapi API error:', vapiResponse.status, responseText);
+      throw new Error(`Vapi call failed: ${responseText}`);
     }
 
-    const vapiData = await vapiResponse.json();
+    const vapiData = JSON.parse(responseText);
     console.log('Vapi call initiated successfully:', { callId: vapiData.id });
 
     // Update appointment status if confirming
@@ -381,16 +402,21 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({
         success: true,
         callId: vapiData.id,
-        message: `${action.charAt(0).toUpperCase() + action.slice(1)} call initiated successfully`,
+        message: `${action.charAt(0).toUpperCase() + action.slice(1)} call initiated successfully to ${normalizedPhone}`,
+        debug: {
+          firstMessage: firstMessage.slice(0, 100) + '...',
+          normalizedPhone,
+          vapiCallId: vapiData.id
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error: unknown) {
-    console.error('Error in vapi-appointment-call:', error);
-    // Return generic error to prevent information disclosure
+    const errMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error in vapi-appointment-call:', errMsg);
     return new Response(
-      JSON.stringify({ error: 'An error occurred processing your request' }),
+      JSON.stringify({ error: errMsg }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

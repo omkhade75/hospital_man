@@ -1,8 +1,7 @@
 
-
 import { createClient } from "@supabase/supabase-js";
 
-// Deno env typings
+// Deno typings
 declare const Deno: {
     env: {
         get(key: string): string | undefined;
@@ -10,27 +9,12 @@ declare const Deno: {
     serve(handler: (req: Request) => Promise<Response> | Response): void;
 };
 
-
-
-
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface CallbackRequest {
-    callbackId: string;
-}
-
-interface UserRole {
-    role: string;
-}
-
-// Valid staff roles that can initiate calls
-const STAFF_ROLES = ['admin', 'doctor', 'nurse', 'receptionist'];
-
 Deno.serve(async (req: Request) => {
-    // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
         return new Response(null, { headers: corsHeaders });
     }
@@ -42,197 +26,212 @@ Deno.serve(async (req: Request) => {
         const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
         const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-        if (!VAPI_API_KEY) {
-            console.error('VAPI_API_KEY not configured');
-            throw new Error('Service configuration error');
-        }
-
+        if (!VAPI_API_KEY) throw new Error('Missing VAPI_API_KEY');
+        if (!VAPI_PHONE_NUMBER_ID) throw new Error('Missing VAPI_PHONE_NUMBER_ID');
         if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
-            console.error('Supabase credentials not configured');
-            throw new Error('Service configuration error');
+            throw new Error('Missing Supabase credentials');
         }
 
         // ============================================
-        // SECURITY: Authorization Check
+        // Auth + Role Check (allow staff AND public)
         // ============================================
-
-        // Get the authorization header from the request
         const authHeader = req.headers.get('Authorization');
-        if (!authHeader) {
-            console.warn('Unauthorized access attempt: No auth header');
-            return new Response(
-                JSON.stringify({ error: 'Unauthorized' }),
-                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-        }
 
-        // Create a user-context client to verify the caller's identity
-        const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            global: { headers: { Authorization: authHeader } }
-        });
+        let isAuthenticated = false;
+        let userId = 'anonymous';
 
-        // Get the authenticated user
-        const { data: { user }, error: userError } = await userClient.auth.getUser();
-
-        let isStaff = false;
-        let userId = 'public-anon';
-
-        if (user) {
-            userId = user.id;
-            console.log(`Auth check passed for user: ${user.id}`);
-
-            // Check if user has a staff role using the user's context
-            const { data: userRoles, error: rolesError } = await userClient
-                .from('user_roles')
-                .select('role')
-                .eq('user_id', user.id)
-                .returns<UserRole[]>();
-
-            if (!rolesError && userRoles) {
-                isStaff = userRoles.some((r: UserRole) => STAFF_ROLES.includes(r.role));
-            }
-
-            if (!isStaff) {
-                // If logged in but not staff - technically patients shouldn't accept callbacks? 
-                // Actually, if a patient triggers it for themselves, maybe okay?
-                // But for now, let's strictly restrict "Staff" actions to Staff, 
-                // and "Public" actions (no user) are allowed for the landing page.
-                // Ideally we'd separate these, but for this task:
-                console.log(`User ${user.id} is not staff.`);
+        if (authHeader) {
+            const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                global: { headers: { Authorization: authHeader } }
+            });
+            const { data: { user } } = await userClient.auth.getUser();
+            if (user) {
+                isAuthenticated = true;
+                userId = user.id;
+                console.log(`Authenticated request from user: ${userId}`);
             }
         } else {
-            console.log('Public anonymous request received.');
+            console.log('Public/anonymous callback request');
         }
 
-        // We allow if:
-        // 1. User is Staff (Admin Panel usage)
-        // 2. No User (Public Landing Page usage)
-        if (user && !isStaff) {
-            console.warn(`Access denied for authenticated non-staff user ${userId}`);
-            return new Response(
-                JSON.stringify({ error: 'Forbidden: Staff access required for authenticated users' }),
-                { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-        }
-
-        console.log(`Processing request for ${userId} (Staff: ${isStaff}, Public: ${!user})`);
-
         // ============================================
-        // Input Validation
+        // Parse Request Body
         // ============================================
+        let requestBody: {
+            callbackId?: string;
+            name?: string;
+            phone?: string;
+            email?: string;
+            reason?: string;
+            preferred_time?: string;
+        };
 
-        let requestBody: CallbackRequest & { name?: string, phone?: string, email?: string, reason?: string, preferred_time?: string };
         try {
             requestBody = await req.json();
         } catch {
             return new Response(
-                JSON.stringify({ error: 'Invalid request body' }),
+                JSON.stringify({ error: 'Invalid JSON in request body' }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
 
-        const { callbackId } = requestBody;
+        console.log('Request body:', JSON.stringify(requestBody));
 
-        // Use service role for data access
+        // ============================================
+        // Get or Create Callback Record
+        // ============================================
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-        let callbackData;
+        let callbackData: Record<string, unknown> | null = null;
 
-        // Scenario 1: callbackId provided (Existing record)
-        if (callbackId) {
+        if (requestBody.callbackId) {
+            // Look up existing callback
             const { data, error } = await supabase
                 .from('callback_requests')
                 .select('*')
-                .eq('id', callbackId)
+                .eq('id', requestBody.callbackId)
                 .single();
 
             if (error || !data) {
-                console.error('Callback not found:', error);
                 return new Response(
                     JSON.stringify({ error: 'Callback request not found' }),
                     { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
                 );
             }
             callbackData = data;
+            console.log(`Found existing callback: ${callbackData!.id}`);
 
-            // Scenario 2: Direct submission (Insert new record)
         } else if (requestBody.name && requestBody.phone) {
+            // Create new callback record
             const { data, error } = await supabase
                 .from('callback_requests')
                 .insert({
                     name: requestBody.name,
                     phone: requestBody.phone,
-                    email: requestBody.email,
-                    reason: requestBody.reason,
-                    preferred_time: requestBody.preferred_time,
-                    // If user is authenticated, we could pass userId, but for now let's keep it simple or pass it in body
+                    email: requestBody.email || null,
+                    reason: requestBody.reason || 'General Inquiry',
+                    preferred_time: requestBody.preferred_time || null,
                 })
                 .select()
                 .single();
 
-            if (error) {
-                console.error('Failed to create callback request:', error);
+            if (error || !data) {
+                console.error('Failed to create callback:', error);
                 return new Response(
                     JSON.stringify({ error: 'Failed to create callback request' }),
                     { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
                 );
             }
             callbackData = data;
-            console.log(`Created new callback request: ${callbackData.id}`);
+            console.log(`Created new callback request: ${callbackData!.id}`);
+
         } else {
             return new Response(
-                JSON.stringify({ error: 'Missing callbackId OR (name and phone)' }),
+                JSON.stringify({ error: 'Provide either callbackId OR both name and phone' }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
 
-        const { name, phone: phoneNumber, reason } = callbackData;
+        const cb = callbackData!;
+        const name = String(cb.name || 'Patient');
+        const phoneNumber = String(cb.phone || '');
+        const reason = String(cb.reason || 'General Inquiry');
 
         if (!phoneNumber) {
             return new Response(
-                JSON.stringify({ error: 'Missing phone number in callback request' }),
+                JSON.stringify({ error: 'No phone number in callback record' }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
 
-        // Normalize phone number
-        let normalizedPhone = phoneNumber.trim().replace(/\s+/g, '');
+        // Normalize phone number for India
+        let normalizedPhone = phoneNumber.trim().replace(/[\s\-()]/g, '');
         if (!normalizedPhone.startsWith('+')) {
-            if (normalizedPhone.length === 10) {
+            if (normalizedPhone.startsWith('0')) {
+                normalizedPhone = '+91' + normalizedPhone.slice(1);
+            } else if (normalizedPhone.length === 10) {
                 normalizedPhone = '+91' + normalizedPhone;
             } else if (normalizedPhone.startsWith('91') && normalizedPhone.length === 12) {
                 normalizedPhone = '+' + normalizedPhone;
             }
         }
 
-        console.log(`Processing callback for ${name} (${normalizedPhone})`);
+        console.log(`Initiating callback call to ${name} at ${normalizedPhone}`);
 
         // ============================================
-        // Make Vapi Call
+        // Vapi Call - FULLY INLINE ASSISTANT
         // ============================================
+        const firstMessage = `Namaste! Main Star Hospital se Maya bol rahi hoon. Kya aap ${name} ji se baat ho sakti hai? Aapne humse callback request ki thi. Main aapki kaise madad kar sakti hoon?`;
 
-        const prompt = `You are Maya, the AI receptionist for Star Hospital (Medicare).
-You are calling a patient named ${name} who requested a callback.
-Hospital Info: Star Hospital.
-Reason for callback: ${reason || 'General Inquiry'}.
+        const systemPrompt = `You are Maya, a warm and professional AI receptionist at Star Hospital.
 
-Task:
-1. Introduce yourself warmly as Maya from Star Hospital.
-2. Mention that you are calling because they requested a callback.
-3. Ask how you can assist them today.
-4. Listen to their query and answer relevant questions about appointments, reports, or general info.
-5. If they need to speak to a human, apologize and say a staff member will call them shortly.
+You are calling ${name} because they requested a callback.
+Reason for their callback: ${reason}
 
+YOUR TASK:
+1. Warmly greet them and confirm you're speaking with the right person.
+2. Ask how you can help them.
+3. Answer questions about appointments, doctors, timings, reports, or general hospital info.
+4. If they need a human staff member, say "Hum aapko jaldi callback karenge" and end politely.
 
-Languages:
-IMPORTANT: You must detect the language the user is speaking (English, Hindi, or Marathi) and respond IN THAT SAME LANGUAGE.
-- If the user speaks Hindi, reply in Hindi.
-- If the user speaks Marathi, reply in Marathi.
-- If the user speaks English, reply in English.
-Do not just translate, but adopt the persona appropriate for that language. Start in English but switch IMMEDIATELY if they speak Hindi or Marathi.
-`;
+LANGUAGE:
+- Speak naturally in Hindi/Hinglish (mix of Hindi and English like Indians speak daily).
+- If they speak English, switch to clear Indian-accented English.
+- Use natural phrases: "haan ji", "bilkul", "zaroor", "koi baat nahi", "shukriya".
 
-        console.log(`Initiating Vapi call for customer ${name} at ${normalizedPhone}...`);
+HOSPITAL INFO:
+- Name: Star Hospital (also called Medicare)
+- Emergency: 102
+- Services: Cardiology, Orthopedics, General Medicine, Gynecology, Pediatrics, and more.
+
+Keep responses SHORT (1-2 sentences). Do NOT say you are an AI.`;
+
+        const vapiPayload = {
+            phoneNumberId: VAPI_PHONE_NUMBER_ID,
+            customer: {
+                number: normalizedPhone,
+                name: name,
+            },
+            assistant: {
+                name: "Maya-Callback",
+                firstMessage: firstMessage,
+                firstMessageMode: "assistant-speaks-first",
+                model: {
+                    provider: "openai",
+                    model: "gpt-4o-mini",
+                    temperature: 0.7,
+                    maxTokens: 150,
+                    messages: [
+                        {
+                            role: "system",
+                            content: systemPrompt
+                        }
+                    ]
+                },
+                voice: {
+                    provider: "playht",
+                    voiceId: "hindi-female",
+                },
+                transcriber: {
+                    provider: "deepgram",
+                    model: "nova-2",
+                    language: "hi",
+                    smartFormat: true,
+                },
+                endCallMessage: "Dhanyawad! Star Hospital mein aapka swagat hai. Namaste!",
+                endCallPhrases: [
+                    "goodbye", "bye", "alvida", "shukriya", "dhanyawad",
+                    "theek hai bye", "ok thanks bye", "namaste"
+                ],
+                voicemailDetection: {
+                    enabled: false
+                },
+                backgroundDenoisingEnabled: true,
+                maxDurationSeconds: 600,
+            }
+        };
+
+        console.log('Sending Vapi payload:', JSON.stringify(vapiPayload, null, 2));
 
         const vapiResponse = await fetch('https://api.vapi.ai/call/phone', {
             method: 'POST',
@@ -240,72 +239,44 @@ Do not just translate, but adopt the persona appropriate for that language. Star
                 'Authorization': `Bearer ${VAPI_API_KEY}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                assistantId: "adaa3583-2d8a-483e-8337-f0b9c37ec16f",
-                phoneNumberId: VAPI_PHONE_NUMBER_ID,
-                customer: {
-                    number: normalizedPhone,
-                    name: name,
-                },
-                assistantOverrides: {
-                    firstMessage: `Namaste ${name}, this is Maya calling from Star Hospital. We received your request for a callback. How can I help you today?`,
-                    model: {
-                        provider: 'openai',
-                        model: 'gpt-4o-mini',
-                        messages: [
-                            {
-                                role: 'system',
-                                content: prompt + `
-Speak in a warm Indian accent. Use Hindi if the user prefers. Keep responses short for low latency.`
-                            }
-                        ]
-                    },
-                    voice: {
-                        provider: '11labs',
-                        voiceId: 'aditi', // Indian English voice
-                        stability: 0.5,
-                        similarityBoost: 0.75
-                    },
-                    transcriber: {
-                        provider: 'deepgram',
-                        model: 'nova-2',
-                        language: 'multi'
-                    },
-                    backgroundDenoisingEnabled: true,
-                    silenceTimeoutMs: 500,
-                    voicemailDetection: {
-                        enabled: false
-                    },
-                    maxDurationSeconds: 1800,
-                },
-            }),
+            body: JSON.stringify(vapiPayload),
         });
 
+        const responseText = await vapiResponse.text();
+        console.log(`Vapi response status: ${vapiResponse.status}`);
+        console.log(`Vapi response body: ${responseText}`);
+
         if (!vapiResponse.ok) {
-            const errorText = await vapiResponse.text();
-            console.error('Vapi API error:', vapiResponse.status, errorText);
-            throw new Error('Failed to initiate call via Vapi');
+            throw new Error(`Vapi API error ${vapiResponse.status}: ${responseText}`);
         }
 
-        const vapiData = await vapiResponse.json();
-        console.log('Vapi call initiated successfully:', { callId: vapiData.id });
+        const vapiData = JSON.parse(responseText);
+        console.log('Vapi call initiated:', { callId: vapiData.id });
 
-        // Update status to processing or completed? leaving as is for now or maybe 'processing'
-        // Let's just log it.
+        // Update callback status
+        await supabase
+            .from('callback_requests')
+            .update({ status: 'processing' })
+            .eq('id', cb.id);
 
         return new Response(
             JSON.stringify({
                 success: true,
                 callId: vapiData.id,
-                message: 'Callback initiated successfully',
+                message: 'Callback call initiated successfully',
+                debug: {
+                    to: normalizedPhone,
+                    firstMessage: firstMessage.slice(0, 80) + '...'
+                }
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
 
-    } catch (error: any) {
-        console.error('Error in vapi-callback-request:', error);
+    } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Error in vapi-callback-request:', errMsg);
         return new Response(
-            JSON.stringify({ error: error.message || 'An internal error occurred' }),
+            JSON.stringify({ error: errMsg }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
     }
