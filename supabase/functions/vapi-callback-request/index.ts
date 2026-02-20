@@ -20,13 +20,13 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
-        const VAPI_API_KEY = Deno.env.get('VAPI_API_KEY');
-        const VAPI_PHONE_NUMBER_ID = Deno.env.get('VAPI_PHONE_NUMBER_ID');
+        const VAPI_API_KEY = Deno.env.get('VAPI_API_KEY') || Deno.env.get('VAPI_PRIVATE_KEY');
+        const VAPI_PHONE_NUMBER_ID = Deno.env.get('VAPI_PHONE_NUMBER_ID') || Deno.env.get('VITE_VAPI_PHONE_NUMBER_ID');
         const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
         const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
         const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-        if (!VAPI_API_KEY) throw new Error('Missing VAPI_API_KEY');
+        if (!VAPI_API_KEY) throw new Error('Missing VAPI_API_KEY (or VAPI_PRIVATE_KEY)');
         if (!VAPI_PHONE_NUMBER_ID) throw new Error('Missing VAPI_PHONE_NUMBER_ID');
         if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
             throw new Error('Missing Supabase credentials');

@@ -33,15 +33,15 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const VAPI_API_KEY = Deno.env.get('VAPI_API_KEY');
+    const VAPI_API_KEY = Deno.env.get('VAPI_API_KEY') || Deno.env.get('VAPI_PRIVATE_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const VAPI_PHONE_NUMBER_ID = Deno.env.get('VAPI_PHONE_NUMBER_ID');
+    const VAPI_PHONE_NUMBER_ID = Deno.env.get('VAPI_PHONE_NUMBER_ID') || Deno.env.get('VITE_VAPI_PHONE_NUMBER_ID');
 
     if (!VAPI_API_KEY) {
-      console.error('VAPI_API_KEY not configured');
-      throw new Error('Service configuration error: Missing VAPI_API_KEY');
+      console.error('VAPI_API_KEY not configured (tried VAPI_API_KEY and VAPI_PRIVATE_KEY)');
+      throw new Error('Service configuration error: Missing VAPI_API_KEY or VAPI_PRIVATE_KEY');
     }
 
     if (!VAPI_PHONE_NUMBER_ID) {
