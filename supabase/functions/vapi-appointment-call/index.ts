@@ -337,8 +337,8 @@ Do NOT say you are an AI.`;
           ] : [],
         },
         voice: {
-          provider: "playht",
-          voiceId: "hindi-female",
+          provider: "openai",
+          voiceId: "alloy",
         },
         transcriber: {
           provider: "deepgram",
