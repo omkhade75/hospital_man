@@ -241,12 +241,13 @@ Do not just translate, but adopt the persona appropriate for that language. Star
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+                assistantId: "adaa3583-2d8a-483e-8337-f0b9c37ec16f",
                 phoneNumberId: VAPI_PHONE_NUMBER_ID,
                 customer: {
                     number: normalizedPhone,
                     name: name,
                 },
-                assistant: {
+                assistantOverrides: {
                     firstMessage: `Namaste ${name}, this is Maya calling from Star Hospital. We received your request for a callback. How can I help you today?`,
                     model: {
                         provider: 'openai',
@@ -254,21 +255,28 @@ Do not just translate, but adopt the persona appropriate for that language. Star
                         messages: [
                             {
                                 role: 'system',
-                                content: prompt
+                                content: prompt + `
+Speak in a warm Indian accent. Use Hindi if the user prefers. Keep responses short for low latency.`
                             }
                         ]
                     },
                     voice: {
-                        provider: 'playht',
-                        voiceId: 'jennifer'
+                        provider: '11labs',
+                        voiceId: 'aditi', // Indian English voice
+                        stability: 0.5,
+                        similarityBoost: 0.75
                     },
-                    // Trial Account Optimizations
+                    transcriber: {
+                        provider: 'deepgram',
+                        model: 'nova-2',
+                        language: 'multi'
+                    },
+                    backgroundDenoisingEnabled: true,
+                    silenceTimeoutMs: 500,
                     voicemailDetection: {
                         enabled: false
                     },
-                    hipaaEnabled: false,
-                    maxDurationSeconds: 1800, // 30 minutes max
-                    recordingEnabled: true,
+                    maxDurationSeconds: 1800,
                 },
             }),
         });

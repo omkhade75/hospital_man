@@ -281,12 +281,13 @@ Deno.serve(async (req: Request) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        assistantId: "adaa3583-2d8a-483e-8337-f0b9c37ec16f",
         phoneNumberId: Deno.env.get('VAPI_PHONE_NUMBER_ID'),
         customer: {
           number: normalizedPhone,
           name: patientName,
         },
-        assistant: {
+        assistantOverrides: {
           firstMessage: callMessage,
           serverUrl: WEBHOOK_URL,
           model: {
@@ -314,35 +315,43 @@ Deno.serve(async (req: Request) => {
             messages: [
               {
                 role: 'system',
-                content: `You are a professional hospital receptionist for Star Hospital named Maya. You are making a ${action} call for an appointment. 
+                content: `You are Maya, a professional Indian hospital receptionist for Star Hospital. 
                 
-                CONTEXT: Appointment ID: ${appointmentId}.
+                PERSONA:
+                - Speak in a warm, polite, and helpful Indian English accent.
+                - Use common Indian courtesies.
+                - If the user speaks Hindi, switch to Hindi immediately with a natural accent.
                 
-                IMPORTANT: 
-                1. If the patient confirms (says yes, okay, confirm, etc.), you MUST explicitly call the 'confirmAppointment' tool with the Appointment ID provided above.
-                2. You must detect the language the user is speaking (English, Hindi, or Marathi) and respond IN THAT SAME LANGUAGE.
-                - If the user speaks Hindi, reply in Hindi.
-                - If the user speaks Marathi, reply in Marathi.
-                - If the user speaks English, reply in English.
+                CONTEXT:
+                - Making a ${action} call for Appointment ID: ${appointmentId}.
                 
-                Be polite, clear, and helpful. If they want to reschedule, let them know a staff member will contact them. Keep responses brief and professional.`
+                RULES:
+                1. If the patient confirms (says yes, okay, confirm, etc.), you MUST call the 'confirmAppointment' tool.
+                2. Respond in the same language as the user (English or Hindi).
+                3. Keep responses extremely concise for low latency.
+                4. Do not mention you are an AI.`
               }
             ]
           },
           voice: {
-            provider: 'playht',
-            voiceId: 'jennifer'
+            provider: '11labs',
+            voiceId: 'aditi', // Aditi is a high-quality Indian English voice
+            stability: 0.5,
+            similarityBoost: 0.75
           },
-          endCallMessage: 'Thank you for choosing Star Hospital. Have a great day!',
-          endCallPhrases: ['goodbye', 'bye', 'thank you', 'thanks'],
-          // Trial Account Optimizations
+          transcriber: {
+            provider: 'deepgram',
+            model: 'nova-2',
+            language: 'multi'
+          },
+          // Latency Optimizations
+          backgroundDenoisingEnabled: true,
+          silenceTimeoutMs: 500,
+          maxDurationSeconds: 1200,
           voicemailDetection: {
             enabled: false
-          },
-          hipaaEnabled: false,
-          recordingEnabled: true,
+          }
         },
-        maxDurationSeconds: 1200, // 20 minutes max
       }),
     });
 
