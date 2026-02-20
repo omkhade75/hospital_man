@@ -5,13 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Users, Stethoscope, MapPin, Phone, Clock, Shield, Award, Building2, ChevronRight, Newspaper, ArrowRight, Facebook, Twitter, Instagram, Linkedin, Mail, LogIn, Search, CheckCircle2 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Heart, Users, Stethoscope, MapPin, Phone, Clock, Shield, Award, Building2, ChevronRight, Newspaper, ArrowRight, Facebook, Twitter, Instagram, Linkedin, Mail, LogIn, Search, CheckCircle2, Siren } from 'lucide-react';
+
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -152,29 +147,22 @@ const PortalSelect = () => {
 
             </div>
 
-            {/* Login Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="lg" className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
-                  <LogIn className="w-4 h-4" />
-                  Login
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 p-2">
-                <DropdownMenuItem onClick={() => navigate('/patient/login')} className="cursor-pointer py-3 px-3 focus:bg-primary/10">
-                  <Users className="mr-2 h-4 w-4 text-primary" />
-                  <span className="font-medium">Patient Login</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/staff/login')} className="cursor-pointer py-3 px-3 focus:bg-emerald-50 text-emerald-700">
-                  <Stethoscope className="mr-2 h-4 w-4" />
-                  <span className="font-medium">Staff Login</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/admin/login')} className="cursor-pointer py-3 px-3 focus:bg-purple-50 text-purple-700">
-                  <Shield className="mr-2 h-4 w-4" />
-                  <span className="font-medium">Admin Login</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Emergency Button */}
+            <Button
+              size="lg"
+              className="gap-2 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:scale-105 transition-all duration-200 relative"
+              onClick={() => navigate('/emergency')}
+            >
+              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-400 animate-ping" />
+              <Siren className="w-4 h-4" />
+              Emergency
+            </Button>
+
+            {/* Patient Login Button */}
+            <Button size="lg" className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300" onClick={() => navigate('/patient/login')}>
+              <LogIn className="w-4 h-4" />
+              Patient Login
+            </Button>
           </div>
         </div>
       </div>
@@ -198,6 +186,15 @@ const PortalSelect = () => {
           <Button size="lg" className="h-16 px-10 text-xl rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300" onClick={() => navigate('/patient/register')}>
             <Users className="h-6 w-6 mr-2" />
             Book Appointment
+          </Button>
+          <Button
+            size="lg"
+            className="h-16 px-10 text-xl rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-red-600 hover:bg-red-700 text-white relative"
+            onClick={() => navigate('/emergency')}
+          >
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-400 animate-ping" />
+            <Siren className="h-6 w-6 mr-2" />
+            Emergency & First Aid
           </Button>
           <Button
             variant="outline"
@@ -497,24 +494,31 @@ const PortalSelect = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/staff/login" className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2 group">
-                  <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-blue-400 transition-colors" />
-                  Staff Portal
-                </Link>
-              </li>
-              <li>
                 <a href="#contact" className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2 group">
                   <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-blue-400 transition-colors" />
                   Contact Us
                 </a>
               </li>
-              <li>
-                <Link to="/admin/login" className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-2 group">
-                  <ChevronRight className="h-4 w-4 text-slate-600 group-hover:text-blue-400 transition-colors" />
-                  Administration
-                </Link>
-              </li>
             </ul>
+
+            {/* Staff & Admin portals - subtle footer links */}
+            <div className="mt-8 pt-6 border-t border-slate-800">
+              <p className="text-xs text-slate-600 uppercase tracking-widest mb-4 font-semibold">Staff Access</p>
+              <ul className="space-y-3">
+                <li>
+                  <Link to="/staff/login" className="text-slate-500 hover:text-emerald-400 transition-colors flex items-center gap-2 group text-sm">
+                    <Stethoscope className="h-3.5 w-3.5 text-slate-600 group-hover:text-emerald-400 transition-colors" />
+                    Doctor / Staff Login
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/admin/login" className="text-slate-500 hover:text-purple-400 transition-colors flex items-center gap-2 group text-sm">
+                    <Shield className="h-3.5 w-3.5 text-slate-600 group-hover:text-purple-400 transition-colors" />
+                    Admin Login
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
 
           {/* Departments */}

@@ -680,6 +680,258 @@ export type Database = {
         }
         Relationships: []
       }
+      emergency_doctors: {
+        Row: {
+          id: string
+          name: string
+          specialization: string
+          phone: string | null
+          email: string | null
+          status: string
+          is_available: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          specialization: string
+          phone?: string | null
+          email?: string | null
+          status?: string
+          is_available?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          specialization?: string
+          phone?: string | null
+          email?: string | null
+          status?: string
+          is_available?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      emergency_calls: {
+        Row: {
+          id: string
+          caller_number: string | null
+          patient_name: string | null
+          emergency_type: string
+          status: string
+          priority: string
+          assigned_doctor_id: string | null
+          notes: string | null
+          vapi_call_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          caller_number?: string | null
+          patient_name?: string | null
+          emergency_type?: string
+          status?: string
+          priority?: string
+          assigned_doctor_id?: string | null
+          notes?: string | null
+          vapi_call_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          caller_number?: string | null
+          patient_name?: string | null
+          emergency_type?: string
+          status?: string
+          priority?: string
+          assigned_doctor_id?: string | null
+          notes?: string | null
+          vapi_call_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ambulances: {
+        Row: {
+          id: string
+          driver_name: string
+          driver_phone: string
+          vehicle_number: string
+          status: string
+          current_latitude: number | null
+          current_longitude: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          driver_name: string
+          driver_phone: string
+          vehicle_number: string
+          status?: string
+          current_latitude?: number | null
+          current_longitude?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          driver_name?: string
+          driver_phone?: string
+          vehicle_number?: string
+          status?: string
+          current_latitude?: number | null
+          current_longitude?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ambulance_requests: {
+        Row: {
+          id: string
+          patient_name: string
+          phone: string
+          latitude: number | null
+          longitude: number | null
+          address: string | null
+          emergency_type: string
+          status: string
+          assigned_ambulance_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          patient_name: string
+          phone: string
+          latitude?: number | null
+          longitude?: number | null
+          address?: string | null
+          emergency_type?: string
+          status?: string
+          assigned_ambulance_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          patient_name?: string
+          phone?: string
+          latitude?: number | null
+          longitude?: number | null
+          address?: string | null
+          emergency_type?: string
+          status?: string
+          assigned_ambulance_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ambulance_tracking: {
+        Row: {
+          id: string
+          ambulance_id: string
+          latitude: number
+          longitude: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          ambulance_id: string
+          latitude: number
+          longitude: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          ambulance_id?: string
+          latitude?: number
+          longitude?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      first_aid_guides: {
+        Row: {
+          id: string
+          title: string
+          description: string
+          category: string
+          steps: string[]
+          severity_level: string
+          icon: string | null
+          color: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description: string
+          category: string
+          steps?: string[]
+          severity_level?: string
+          icon?: string | null
+          color?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string
+          category?: string
+          steps?: string[]
+          severity_level?: string
+          icon?: string | null
+          color?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      call_transcripts: {
+        Row: {
+          id: string
+          emergency_call_id: string | null
+          vapi_call_id: string | null
+          transcript: string | null
+          summary: string | null
+          detected_type: string | null
+          priority_suggested: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          emergency_call_id?: string | null
+          vapi_call_id?: string | null
+          transcript?: string | null
+          summary?: string | null
+          detected_type?: string | null
+          priority_suggested?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          emergency_call_id?: string | null
+          vapi_call_id?: string | null
+          transcript?: string | null
+          summary?: string | null
+          detected_type?: string | null
+          priority_suggested?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

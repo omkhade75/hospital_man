@@ -17,7 +17,10 @@ import {
   PhoneIncoming,
   ClipboardCheck,
   Banknote,
-  Info
+  Info,
+  Siren,
+  Truck,
+  HeartPulse,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -119,6 +122,20 @@ const Sidebar = ({ className, onLinkClick }: SidebarProps) => {
     },
   });
 
+  // Get active emergencies count for badge
+  const { data: emergencyCount = 0 } = useQuery({
+    queryKey: ['active-emergency-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('emergency_calls')
+        .select('*', { count: 'exact', head: true })
+        .not('status', 'in', '("completed","cancelled")');
+      if (error) return 0;
+      return count || 0;
+    },
+    refetchInterval: 15000,
+  });
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -132,9 +149,12 @@ const Sidebar = ({ className, onLinkClick }: SidebarProps) => {
     { icon: CalendarDays, label: "Appointments", path: "/appointments" },
     { icon: Building2, label: "Departments", path: "/departments" },
     { icon: BedDouble, label: "Bed Management", path: "/beds" },
+    { icon: Siren, label: "Emergency", path: "/emergency/dashboard", badge: emergencyCount, emergency: true },
+    { icon: Truck, label: "Ambulance", path: "/ambulance" },
     ...((isAdmin || isReceptionist || isCashier) ? [{ icon: PhoneIncoming, label: "Callbacks", path: "/callbacks", badge: callbacksCount }] : []),
     { icon: ClipboardList, label: "Reports", path: "/reports" },
     ...(isAdmin ? [
+      { icon: HeartPulse, label: "Doctor Management", path: "/admin/doctors" },
       { icon: UserCheck, label: "Staff Approvals", path: "/staff/approvals", badge: pendingCount },
       { icon: Activity, label: "AI Tools", path: "/admin/ai-tools" },
       { icon: Banknote, label: "Manage Salaries", path: "/salaries" },
@@ -149,6 +169,8 @@ const Sidebar = ({ className, onLinkClick }: SidebarProps) => {
       { icon: Users, label: "Patients", path: "/patients" },
       { icon: Stethoscope, label: "Doctors", path: "/doctors" },
       { icon: BedDouble, label: "Bed Management", path: "/beds" },
+      { icon: Siren, label: "Emergency", path: "/emergency/dashboard", badge: emergencyCount, emergency: true },
+      { icon: Truck, label: "Ambulance", path: "/ambulance" },
       { icon: ClipboardList, label: "Reports", path: "/reports" },
       { icon: ClipboardCheck, label: "Rounds & Advice", path: "/nurse/rounds" },
     ];
@@ -159,6 +181,7 @@ const Sidebar = ({ className, onLinkClick }: SidebarProps) => {
     navItems = [
       { icon: LayoutDashboard, label: "Dashboard", path: "/staff/dashboard/cashier" },
       { icon: PhoneIncoming, label: "Callbacks", path: "/callbacks", badge: callbacksCount },
+      { icon: Siren, label: "Emergency", path: "/emergency/dashboard", badge: emergencyCount, emergency: true },
       { icon: Users, label: "Patients", path: "/patients" },
       { icon: Stethoscope, label: "Doctors", path: "/doctors" },
     ];
@@ -181,6 +204,7 @@ const Sidebar = ({ className, onLinkClick }: SidebarProps) => {
       <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
+          const isEmergency = 'emergency' in item && item.emergency;
           return (
             <Link
               key={item.path}
@@ -189,12 +213,16 @@ const Sidebar = ({ className, onLinkClick }: SidebarProps) => {
               className={cn(
                 "flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  ? isEmergency
+                    ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+                    : "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
+                  : isEmergency
+                    ? "text-red-500 hover:bg-red-500/10 hover:text-red-400"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               )}
             >
               <div className="flex items-center gap-3">
-                <item.icon className="w-5 h-5" />
+                <item.icon className={cn("w-5 h-5", isEmergency && !isActive && "animate-pulse")} />
                 {item.label}
               </div>
               {'badge' in item && item.badge > 0 && (

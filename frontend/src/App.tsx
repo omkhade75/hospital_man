@@ -48,6 +48,12 @@ import AdminAITools from "./pages/admin/AdminAITools";
 import AdminInfo from "./pages/admin/AdminInfo";
 import Salaries from "./pages/staff/Salaries";
 
+// Emergency System Pages
+import EmergencyDashboard from "./pages/EmergencyDashboard";
+import AmbulancePage from "./pages/AmbulancePage";
+import DoctorManagement from "./pages/DoctorManagement";
+import PublicEmergency from "./pages/PublicEmergency";
+
 const queryClient = new QueryClient();
 
 import { ThemeProvider } from "./components/theme-provider";
@@ -61,8 +67,9 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Portal Selection */}
+              {/* Public pages (no auth) */}
               <Route path="/" element={<PortalSelect />} />
+              <Route path="/emergency" element={<PublicEmergency />} />
 
               {/* Patient Routes */}
               <Route path="/patient/login" element={<PatientLogin />} />
@@ -249,6 +256,32 @@ const App = () => (
               {/* Legacy routes redirect */}
               <Route path="/login" element={<PortalSelect />} />
               <Route path="/register" element={<PortalSelect />} />
+
+              {/* Emergency System Routes (staff-authenticated views) */}
+              <Route
+                path="/emergency/dashboard"
+                element={
+                  <StaffProtectedRoute>
+                    <EmergencyDashboard />
+                  </StaffProtectedRoute>
+                }
+              />
+              <Route
+                path="/ambulance"
+                element={
+                  <StaffProtectedRoute>
+                    <AmbulancePage />
+                  </StaffProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/doctors"
+                element={
+                  <StaffProtectedRoute requiredRole="admin">
+                    <DoctorManagement />
+                  </StaffProtectedRoute>
+                }
+              />
 
               {/* Catch-all */}
               <Route path="/social-coming-soon" element={<ComingSoon />} />

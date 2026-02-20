@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Users, Stethoscope, X, ArrowRight } from 'lucide-react';
+import { Users, X, ArrowRight } from 'lucide-react';
 
 interface LoginPromptModalProps {
   delaySeconds?: number;
@@ -57,43 +57,27 @@ const LoginPromptModal = ({ delaySeconds = 10 }: LoginPromptModalProps) => {
               Welcome to Medicare
             </DialogTitle>
             <DialogDescription className="text-muted-foreground max-w-sm mx-auto">
-              Access personalized care, view reports, or manage hospital operations securely.
+              Book appointments, view your medical records, and manage your health — all in one place.
             </DialogDescription>
           </div>
 
-          {/* Selection Grid */}
-          <div className="p-6 grid grid-cols-2 gap-4">
-            {/* Patient Card */}
+          {/* Patient Login Card */}
+          <div className="p-6">
             <div
               onClick={() => handleOptionClick('/patient/login')}
-              className="group cursor-pointer relative p-5 rounded-2xl border border-border/50 bg-card hover:bg-blue-50/50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-700 transition-all duration-300 hover:shadow-md"
+              className="group cursor-pointer relative p-6 rounded-2xl border border-border/50 bg-card hover:bg-blue-50/50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-700 transition-all duration-300 hover:shadow-md flex items-center gap-5"
             >
-              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Users className="h-6 w-6" />
+              <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <Users className="h-7 w-7" />
               </div>
-              <h3 className="font-semibold text-foreground mb-1">Patient Portal</h3>
-              <p className="text-xs text-muted-foreground leading-snug mb-3">
-                Book appointments & view medical records
-              </p>
-              <div className="flex items-center text-xs font-medium text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
-                Sign In <ArrowRight className="h-3 w-3 ml-1" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground text-lg mb-1">Patient Portal</h3>
+                <p className="text-sm text-muted-foreground leading-snug">
+                  Book appointments &amp; view your medical records
+                </p>
               </div>
-            </div>
-
-            {/* Staff Card */}
-            <div
-              onClick={() => handleOptionClick('/staff/login')}
-              className="group cursor-pointer relative p-5 rounded-2xl border border-border/50 bg-card hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20 hover:border-emerald-200 dark:hover:border-emerald-700 transition-all duration-300 hover:shadow-md"
-            >
-              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Stethoscope className="h-6 w-6" />
-              </div>
-              <h3 className="font-semibold text-foreground mb-1">Staff Portal</h3>
-              <p className="text-xs text-muted-foreground leading-snug mb-3">
-                For doctors, nurses & hospital staff
-              </p>
-              <div className="flex items-center text-xs font-medium text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
-                Staff Login <ArrowRight className="h-3 w-3 ml-1" />
+              <div className="flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0 duration-300 flex-shrink-0">
+                Sign In <ArrowRight className="h-4 w-4 ml-1" />
               </div>
             </div>
           </div>
