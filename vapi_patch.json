@@ -1,0 +1,1 @@
+﻿{"voice":{"voiceId":"Rohan","provider":"vapi"},"serverUrl":"https://fjwwkjtfwlomvuqpochk.supabase.co/functions/v1/vapi-webhook","model":{"provider":"openai","model":"gpt-4o-mini","messages":[{"content":"You are Maya. Speak Hinglish.","role":"system"}]}}

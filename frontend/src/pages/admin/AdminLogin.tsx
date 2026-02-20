@@ -30,7 +30,8 @@ const AdminLogin = () => {
 
     if (error) {
       setLoading(false);
-      toast.error('Invalid login credentials');
+      console.error('Login error:', error);
+      toast.error(error.message || 'Invalid login credentials');
       return;
     }
 
