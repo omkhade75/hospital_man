@@ -216,6 +216,16 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Normalize phone number for Vapi/Twilio
+    let normalizedPhone = phoneNumber.trim().replace(/\s+/g, '');
+    if (!normalizedPhone.startsWith('+')) {
+      if (normalizedPhone.length === 10) {
+        normalizedPhone = '+91' + normalizedPhone;
+      } else if (normalizedPhone.startsWith('91') && normalizedPhone.length === 12) {
+        normalizedPhone = '+' + normalizedPhone;
+      }
+    }
+
     // Get patient and doctor names
     const patientName = appointmentType === 'patient'
       ? appointment.patient_name
@@ -259,7 +269,7 @@ Deno.serve(async (req: Request) => {
       timestamp: new Date().toISOString()
     });
 
-    console.log('Initiating Vapi call to:', phoneNumber.replace(/\d(?=\d{4})/g, '*'));
+    console.log(`Initiating Vapi ${action} call to: ${normalizedPhone} for customer ${patientName}...`);
 
     const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/vapi-webhook`;
 
@@ -271,9 +281,9 @@ Deno.serve(async (req: Request) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        phoneNumberId: undefined, // Will use Vapi's default number
+        phoneNumberId: Deno.env.get('VAPI_PHONE_NUMBER_ID'),
         customer: {
-          number: phoneNumber,
+          number: normalizedPhone,
           name: patientName,
         },
         assistant: {
@@ -325,8 +335,14 @@ Deno.serve(async (req: Request) => {
           },
           endCallMessage: 'Thank you for choosing Star Hospital. Have a great day!',
           endCallPhrases: ['goodbye', 'bye', 'thank you', 'thanks'],
+          // Trial Account Optimizations
+          voicemailDetection: {
+            enabled: false
+          },
+          hipaaEnabled: false,
+          recordingEnabled: true,
         },
-        maxDuration: 120, // 2 minutes max
+        maxDurationSeconds: 1200, // 20 minutes max
       }),
     });
 
