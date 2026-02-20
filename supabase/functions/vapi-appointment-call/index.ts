@@ -370,7 +370,14 @@ Do NOT say you are an AI.`;
         'Authorization': `Bearer ${VAPI_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(vapiPayload),
+      body: JSON.stringify({
+        phoneNumberId: VAPI_PHONE_NUMBER_ID,
+        assistantId: "adaa3583-2d8a-483e-8337-f0b9c37ec16f",
+        customer: {
+          number: normalizedPhone,
+          name: patientName,
+        }
+      }),
     });
 
     const responseText = await vapiResponse.text();

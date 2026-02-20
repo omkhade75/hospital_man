@@ -189,34 +189,8 @@ BEHAVIOR RULES:
 - Never say you are an AI. Just be helpful.
 - If you cannot answer, say "Main aapko staff se connect karti hoon."`;
 
-      // Always use a fully inline assistant for maximum reliability
-      vapiRef.current?.start({
-        name: "Maya-StarHospital",
-        firstMessage: "Namaste! Main Maya hoon, Star Hospital ki AI receptionist. Main aapki kaise madad kar sakti hoon aaj?",
-        firstMessageMode: "assistant-speaks-first" as const,
-        transcriber: {
-          provider: "deepgram" as const,
-          model: "nova-2",
-          language: "multi",
-        },
-        voice: {
-          provider: "playht" as const,
-          voiceId: "hindi-female",
-        },
-        model: {
-          provider: "openai" as const,
-          model: "gpt-4o-mini",
-          temperature: 0.7,
-          maxTokens: 150,
-          messages: [
-            {
-              role: "system" as const,
-              content: systemPrompt
-            }
-          ]
-        },
-        endCallMessage: "Dhanyawad! Star Hospital mein aapka swagat hai. Namaste!",
-      });
+      // Use the pre-configured assistant ID for maximum reliability and speed
+      vapiRef.current?.start("adaa3583-2d8a-483e-8337-f0b9c37ec16f");
     }
   };
 
