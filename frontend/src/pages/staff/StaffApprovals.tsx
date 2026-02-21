@@ -342,16 +342,16 @@ const StaffApprovals = () => {
                             className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
                           >
                             <CheckCircle className="w-4 h-4 mr-2" />
-                            Done
+                            Accept Request
                           </Button>
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => resolveRequestMutation.mutate(req.id)}
-                            className="flex-1 sm:flex-none text-muted-foreground hover:text-foreground"
+                            className="flex-1 sm:flex-none"
                           >
                             <XCircle className="w-4 h-4 mr-2" />
-                            Dismiss
+                            Reject Request
                           </Button>
                         </div>
                       </div>

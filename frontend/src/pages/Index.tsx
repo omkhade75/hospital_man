@@ -13,9 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { 
-  UserPlus, 
-  CalendarPlus, 
+import {
+  UserPlus,
+  CalendarPlus,
   BedDouble as BedIcon,
   Pill,
   FileText,
@@ -25,6 +25,11 @@ import {
 } from "lucide-react";
 import AddPatientModal from "@/components/modals/AddPatientModal";
 import AddAppointmentModal from "@/components/modals/AddAppointmentModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ShieldCheck, UserCheck } from "lucide-react";
 
 const statusStyles = {
   confirmed: "bg-success/10 text-success border-success/20",
@@ -42,6 +47,52 @@ const Index = () => {
   const { data: doctors, isLoading: doctorsLoading } = useDoctors();
   const { data: appointments, isLoading: appointmentsLoading } = useAppointments(format(new Date(), "yyyy-MM-dd"));
   const { data: departments, isLoading: departmentsLoading } = useDepartments();
+  const { user } = useAuth();
+
+  // Check if user is admin
+  const { data: isAdmin = false } = useQuery({
+    queryKey: ['is-admin', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: user.id.toString(),
+        _role: 'admin'
+      });
+      if (error) return false;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Get pending approvals count
+  const { data: pendingStaffCount = 0 } = useQuery({
+    queryKey: ['pending-staff-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('staff_approval_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: isAdmin,
+  });
+
+  // Get pending permission requests count
+  const { data: pendingPermissionCount = 0 } = useQuery({
+    queryKey: ['pending-permission-count', user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id.toString())
+        .eq('type', 'permission_request');
+      if (error) return 0;
+      return count || 0;
+    },
+    enabled: isAdmin,
+  });
 
   const isLoading = patientsLoading || doctorsLoading || appointmentsLoading || departmentsLoading;
 
@@ -64,9 +115,9 @@ const Index = () => {
     { icon: UserPlus, label: "Add Patient", description: "Register new patient", color: "bg-primary/10 text-primary hover:bg-primary/20", onClick: () => setShowAddPatient(true) },
     { icon: CalendarPlus, label: "New Appointment", description: "Schedule appointment", color: "bg-info/10 text-info hover:bg-info/20", onClick: () => setShowAddAppointment(true) },
     { icon: BedIcon, label: "Bed Management", description: "Manage bed allocation", color: "bg-success/10 text-success hover:bg-success/20", onClick: () => navigate("/beds") },
-    { icon: Pill, label: "Prescriptions", description: "Write prescription", color: "bg-warning/10 text-warning hover:bg-warning/20", onClick: () => {} },
+    { icon: Pill, label: "Prescriptions", description: "Write prescription", color: "bg-warning/10 text-warning hover:bg-warning/20", onClick: () => { } },
     { icon: FileText, label: "Lab Reports", description: "View lab results", color: "bg-secondary text-secondary-foreground hover:bg-secondary/80", onClick: () => navigate("/reports") },
-    { icon: ClipboardCheck, label: "Discharge", description: "Process discharge", color: "bg-accent text-accent-foreground hover:bg-accent/80", onClick: () => {} },
+    { icon: ClipboardCheck, label: "Discharge", description: "Process discharge", color: "bg-accent text-accent-foreground hover:bg-accent/80", onClick: () => { } },
   ];
 
   if (isLoading) {
@@ -80,10 +131,48 @@ const Index = () => {
   }
 
   return (
-    <DashboardLayout 
-      title="Dashboard" 
+    <DashboardLayout
+      title="Dashboard"
       subtitle="Welcome back! Here's an overview of your hospital."
     >
+      {/* Admin Alerts */}
+      {isAdmin && (pendingStaffCount > 0 || pendingPermissionCount > 0) && (
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {pendingStaffCount > 0 && (
+            <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900/50">
+              <UserCheck className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-800 dark:text-amber-400">Pending Staff Access</AlertTitle>
+              <AlertDescription className="flex items-center justify-between">
+                <span>There are {pendingStaffCount} staff members awaiting access approval.</span>
+                <Button
+                  variant="link"
+                  className="text-amber-700 dark:text-amber-300 h-auto p-0 font-semibold"
+                  onClick={() => navigate('/staff/approvals')}
+                >
+                  Review Access →
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          {pendingPermissionCount > 0 && (
+            <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-900/50">
+              <ShieldCheck className="h-4 w-4 text-blue-600" />
+              <AlertTitle className="text-blue-800 dark:text-blue-400">Permission Requests</AlertTitle>
+              <AlertDescription className="flex items-center justify-between">
+                <span>You have {pendingPermissionCount} new permission requests from staff.</span>
+                <Button
+                  variant="link"
+                  className="text-blue-700 dark:text-blue-300 h-auto p-0 font-semibold"
+                  onClick={() => navigate('/staff/approvals')}
+                >
+                  Review Requests →
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatCard
@@ -177,7 +266,7 @@ const Index = () => {
               )}
             </div>
             <div className="p-4 border-t border-border">
-              <button 
+              <button
                 className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 transition-colors"
                 onClick={() => navigate("/appointments")}
               >
@@ -186,7 +275,7 @@ const Index = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Right Column - Quick Actions & Departments */}
         <div className="space-y-6">
           {/* Quick Actions */}

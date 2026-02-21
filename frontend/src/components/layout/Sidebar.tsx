@@ -95,19 +95,35 @@ const Sidebar = ({ className, onLinkClick }: SidebarProps) => {
     enabled: !!user,
   });
 
-  // Get pending approvals count for badge
-  const { data: pendingCount = 0 } = useQuery({
-    queryKey: ['pending-approvals-count'],
+  // Get pending approvals and permission requests count for badge
+  const { data: staffCounts } = useQuery({
+    queryKey: ['staff-counts', user?.id],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('staff_approval_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
-      if (error) return 0;
-      return count || 0;
+      if (!user) return { approvals: 0, permissions: 0 };
+
+      const [approvalsRes, permissionsRes] = await Promise.all([
+        supabase
+          .from('staff_approval_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending'),
+        supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id.toString())
+          .eq('type', 'permission_request')
+      ]);
+
+      return {
+        approvals: approvalsRes.count || 0,
+        permissions: permissionsRes.count || 0,
+        total: (approvalsRes.count || 0) + (permissionsRes.count || 0)
+      };
     },
     enabled: isAdmin,
+    refetchInterval: 30000,
   });
+
+  const pendingCount = staffCounts?.total || 0;
 
   // Get pending callbacks count
   const { data: callbacksCount = 0 } = useQuery({
