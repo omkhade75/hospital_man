@@ -42,8 +42,8 @@ Render makes deployment automatic using the `render.yaml` file we created.
 2. Click the **"New +"** button and select **"Blueprint"**.
 3. Connect your **GitHub account** and select the `hospital-management` repository.
 4. Render will detect the `render.yaml` file and show two services:
-   - **starhospital-backend** (Node.js API)
-   - **starhospital-frontend** (Static Site)
+   - **hospital-backend** (Node.js API)
+   - **hospital-frontend** (Static Site)
 
 5. Click **"Apply"** to start the deployment.
 
@@ -54,7 +54,7 @@ Render makes deployment automatic using the `render.yaml` file we created.
 Render will deploy the services, but you need to add your secrets (Environment Variables) in the Render Dashboard.
 
 1. Go to your **Dashboard**.
-2. Click on **starhospital-frontend**.
+2. Click on **hospital-frontend**.
 3. Go to **"Environment"** tab.
 4. Add the following variables (copy values from your local `.env` file):
 
@@ -75,6 +75,6 @@ Render will deploy the services, but you need to add your secrets (Environment V
 
 ## 🎉 Access Your App
 
-Once deployed (green checkmarks), you can access your app at the URL provided by Render (e.g., `https://starhospital-frontend.onrender.com`).
+Once deployed (green checkmarks), you can access your app at the URL provided by Render (e.g., `https://hospital-frontend.onrender.com`).
 
 **Note on Database:** The backend uses SQLite, which resets on restart on Render's free tier. For persistent data, switch `DB_DIALECT` to `mysql` and connect an external database.

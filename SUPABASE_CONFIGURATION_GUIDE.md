@@ -39,7 +39,7 @@ Add the following keys:
 | :--- | :--- |
 | `SUPABASE_URL` | Your Supabase Project URL (e.g., https://xyz.supabase.co) |
 | `SUPABASE_ANON_KEY` | Your Public Anon Key (from Project Settings > API) |
-| `LOVABLE_API_KEY` | **Required for Maya Chat**. (If you don't have this, chat will fail) |
+| `AI_CHAT_API_KEY` | **Required for Maya Chat**. (OpenAI or Gateway API Key) |
 | `VAPI_PRIVATE_KEY` | **Required for Voice**. The private key from Vapi.ai |
 
 *> Explanation: Without these keys, the AI features will return 500 Errors.*
@@ -61,6 +61,6 @@ npx supabase functions deploy --no-verify-jwt
 - [ ] Site URL set to `https://hospital-man.onrender.com`
 - [ ] Redirect URLs include `https://hospital-man.onrender.com/**`
 - [ ] Email Confirmation disabled (optional but recommended)
-- [ ] Secrets (`LOVABLE_API_KEY`, `VAPI_PRIVATE_KEY`) added if using AI.
+- [ ] Secrets (`AI_CHAT_API_KEY`, `VAPI_PRIVATE_KEY`) added if using AI.
 
 Once these are set, your application should run without console errors.
