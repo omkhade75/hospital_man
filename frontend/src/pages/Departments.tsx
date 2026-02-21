@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Heart, 
-  Brain, 
-  Bone, 
-  Baby, 
-  Stethoscope, 
+import {
+  Heart,
+  Brain,
+  Bone,
+  Baby,
+  Stethoscope,
   Activity,
   Plus,
   Users,
@@ -17,8 +17,10 @@ import {
   Loader2,
   Trash2
 } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useDepartments, useDeleteDepartment } from "@/hooks/useDepartments";
+import AddDepartmentModal from "@/components/modals/AddDepartmentModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +52,7 @@ const colorMap: Record<string, string> = {
 };
 
 const Departments = () => {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { data: departments, isLoading } = useDepartments();
   const deleteDepartment = useDeleteDepartment();
 
@@ -66,11 +69,16 @@ const Departments = () => {
             {departments?.length || 0} active departments
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsAddModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Department
         </Button>
       </div>
+
+      <AddDepartmentModal
+        open={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+      />
 
       {/* Departments Grid */}
       {isLoading ? (
@@ -83,10 +91,10 @@ const Departments = () => {
             const occupancy = dept.total_beds > 0 ? Math.round((dept.occupied_beds / dept.total_beds) * 100) : 0;
             const Icon = iconMap[dept.name] || Stethoscope;
             const colorClass = colorMap[dept.name] || "text-primary bg-primary/10";
-            
+
             return (
-              <Card 
-                key={dept.id} 
+              <Card
+                key={dept.id}
                 className="card-shadow border-border/50 hover:shadow-elevated transition-all duration-300 cursor-pointer animate-fade-in group"
               >
                 <CardHeader className="pb-3">
@@ -101,9 +109,9 @@ const Departments = () => {
                       </Badge>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -118,7 +126,7 @@ const Departments = () => {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
+                            <AlertDialogAction
                               onClick={() => handleDelete(dept.id)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
@@ -152,8 +160,8 @@ const Departments = () => {
                         </span>
                         <span className="font-medium">{dept.occupied_beds}/{dept.total_beds}</span>
                       </div>
-                      <Progress 
-                        value={occupancy} 
+                      <Progress
+                        value={occupancy}
                         className={cn(
                           "h-2",
                           occupancy > 80 && "[&>div]:bg-warning",
