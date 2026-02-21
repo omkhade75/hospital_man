@@ -88,25 +88,36 @@ const PortalSelect = () => {
 
   // Removed local backend connection test as it's no longer used
 
-  // Hardcoded doctors for display
-  const doctors = [
-    { id: '101', name: 'Dr. Sarah Johnson', specialty: 'Cardiology', experience: '15 years', rating: 4.9, available: true },
-    { id: '102', name: 'Dr. James Smith', specialty: 'Neurology', experience: '12 years', rating: 4.8, available: true },
-    { id: '103', name: 'Dr. Emily Chen', specialty: 'Pediatrics', experience: '10 years', rating: 4.9, available: true },
-    { id: '104', name: 'Dr. Michael Brown', specialty: 'Orthopedics', experience: '18 years', rating: 4.7, available: true },
-  ];
+  // Fetch doctors dynamically
+  const { data: doctorsData, isLoading: isDoctorsLoading } = useQuery({
+    queryKey: ['public-doctors-portal'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('doctors')
+        .select('*')
+        .eq('available', true)
+        .limit(4);
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
-  const isDoctorsLoading = false;
+  const doctors = doctorsData || [];
 
-  // Hardcoded departments for display
-  const departments = [
-    { id: '1', name: 'Cardiology', doctors_count: 5 },
-    { id: '2', name: 'Neurology', doctors_count: 4 },
-    { id: '3', name: 'Orthopedics', doctors_count: 6 },
-    { id: '4', name: 'Oncology', doctors_count: 3 },
-    { id: '5', name: 'Pediatrics', doctors_count: 4 },
-    { id: '6', name: 'Emergency', doctors_count: 10 },
-  ];
+  // Fetch departments dynamically
+  const { data: departmentsData } = useQuery({
+    queryKey: ['public-departments-portal'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .limit(6);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const departments = departmentsData || [];
 
   const handleNewsClick = (url: string) => {
     window.open(url, '_blank');

@@ -89,7 +89,7 @@ const PatientDashboard = () => {
   const { data: doctors = [] } = useQuery({
     queryKey: ['public-doctors', selectedDepartment],
     queryFn: async () => {
-      let query = supabase.from('doctors').select('*');
+      let query = supabase.from('doctors').select('*').eq('available', true);
       if (selectedDepartment && selectedDepartment !== 'all') {
         query = query.eq('department_id', selectedDepartment);
       }

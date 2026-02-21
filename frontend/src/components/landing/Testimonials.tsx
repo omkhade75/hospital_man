@@ -36,7 +36,7 @@ const testimonials = [
     {
         name: "Anita Desai",
         role: "Maternity Care",
-        content: "The maternity ward is world-class. Dr. Sarah Johnson guided me through a complex pregnancy with so much patience and expertise.",
+        content: "The maternity ward is world-class. The doctor guided me through a complex pregnancy with so much patience and expertise.",
         rating: 4,
         avatar: "AD"
     }
