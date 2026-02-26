@@ -2,6 +2,8 @@
 
 > A modern, AI-powered healthcare management platform designed for efficiency, compassion, and cutting-edge patient care.
 
+🔗 **Live Project**: [https://hospital-man-fronted.onrender.com](https://hospital-man-fronted.onrender.com)
+
 ---
 
 ## 🌟 Overview
