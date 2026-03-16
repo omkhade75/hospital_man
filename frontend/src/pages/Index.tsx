@@ -174,7 +174,7 @@ const Index = () => {
       )}
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6">
         <StatCard
           title="Total Patients"
           value={patients?.length || 0}
@@ -230,9 +230,9 @@ const Index = () => {
               ) : (
                 appointments?.slice(0, 5).map((apt) => (
                   <div key={apt.id} className="p-4 hover:bg-muted/50 transition-colors duration-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="w-10 h-10">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10 shrink-0">
                           <AvatarFallback className="bg-secondary text-secondary-foreground text-sm font-medium">
                             {apt.patients?.name?.split(" ").map((n) => n[0]).join("") || "?"}
                           </AvatarFallback>
@@ -245,20 +245,20 @@ const Index = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-0 pl-12 sm:pl-0">
                         <div className="flex items-center gap-1 text-sm text-foreground">
                           <Clock className="w-3 h-3" />
                           {formatTime(apt.appointment_time)}
                         </div>
                         <Badge
                           variant="outline"
-                          className={cn("mt-1 capitalize", statusStyles[apt.status as keyof typeof statusStyles] || statusStyles.pending)}
+                          className={cn("mt-0 sm:mt-1 capitalize text-xs", statusStyles[apt.status as keyof typeof statusStyles] || statusStyles.pending)}
                         >
                           {apt.status}
                         </Badge>
                       </div>
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-2 pl-12 sm:pl-0">
                       <Badge variant="secondary" className="text-xs">{apt.type}</Badge>
                     </div>
                   </div>
@@ -364,37 +364,37 @@ const Index = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Patient</th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Condition</th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Room</th>
-                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Status</th>
+                <th className="text-left p-3 sm:p-4 text-sm font-medium text-muted-foreground">Patient</th>
+                <th className="text-left p-3 sm:p-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">Condition</th>
+                <th className="text-left p-3 sm:p-4 text-sm font-medium text-muted-foreground hidden md:table-cell">Room</th>
+                <th className="text-left p-3 sm:p-4 text-sm font-medium text-muted-foreground">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {patients?.slice(0, 4).map((patient) => (
                 <tr key={patient.id} className="hover:bg-muted/30 transition-colors duration-200">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarFallback className="bg-secondary text-secondary-foreground text-sm font-medium">
+                  <td className="p-3 sm:p-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Avatar className="w-8 h-8 sm:w-10 sm:h-10 shrink-0">
+                        <AvatarFallback className="bg-secondary text-secondary-foreground text-xs sm:text-sm font-medium">
                           {patient.name.split(" ").map((n) => n[0]).join("")}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium text-foreground">{patient.name}</p>
-                        <p className="text-sm text-muted-foreground">{patient.age} yrs, {patient.gender}</p>
+                        <p className="font-medium text-foreground text-sm">{patient.name}</p>
+                        <p className="text-xs text-muted-foreground">{patient.age} yrs, {patient.gender}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="p-4">
-                    <p className="text-foreground">{patient.condition || "—"}</p>
+                  <td className="p-3 sm:p-4 hidden sm:table-cell">
+                    <p className="text-foreground text-sm">{patient.condition || "—"}</p>
                   </td>
-                  <td className="p-4">
+                  <td className="p-3 sm:p-4 hidden md:table-cell">
                     {patient.room ? (
                       <Badge variant="secondary" className="font-mono">{patient.room}</Badge>
                     ) : "—"}
                   </td>
-                  <td className="p-4">
+                  <td className="p-3 sm:p-4">
                     <Badge
                       variant="outline"
                       className={cn(

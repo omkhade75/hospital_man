@@ -37,19 +37,19 @@ const packages = [
 
 export default function HealthPackages() {
     return (
-        <section className="py-20 px-4 bg-muted/50">
+        <section className="py-12 md:py-20 px-4 bg-muted/50">
             <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-16">
+                <div className="text-center mb-10 md:mb-16">
                     <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-200 border-none">Preventive Care</Badge>
-                    <h2 className="text-3xl font-bold mb-4">Health Checkup Packages</h2>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
+                    <h2 className="text-2xl sm:text-3xl font-bold mb-3 md:mb-4">Health Checkup Packages</h2>
+                    <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto">
                         Detect health issues early with our comprehensive and affordable health packages. Book online and skip the queue.
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 pt-4">
                     {packages.map((pkg, i) => (
-                        <Card key={i} className={`relative flex flex-col hover:shadow-xl transition-shadow ${pkg.popular ? 'border-primary shadow-lg scale-105 z-10' : ''}`}>
+                        <Card key={i} className={`relative flex flex-col hover:shadow-xl transition-shadow ${pkg.popular ? 'border-primary shadow-lg sm:scale-105 sm:z-10' : ''}`}>
                             {pkg.popular && (
                                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
                                     Most Popular

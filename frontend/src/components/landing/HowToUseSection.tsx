@@ -51,16 +51,16 @@ const HowToUseSection = () => {
   };
 
   return (
-    <section className="py-16 px-4 bg-gradient-to-b from-muted/30 to-background">
+    <section className="py-12 md:py-16 px-4 bg-gradient-to-b from-muted/30 to-background">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">How to Use Our Services</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+        <div className="text-center mb-8 md:mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3 md:mb-4">How to Use Our Services</h2>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto">
             Getting started is easy. Follow these simple steps to book your appointment and access our healthcare services.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
           {steps.map((step, index) => (
             <Card
               key={step.title}

@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Users, Stethoscope, MapPin, Phone, Clock, Shield, Award, Building2, ChevronRight, Newspaper, ArrowRight, Facebook, Twitter, Instagram, Linkedin, Mail, LogIn, Search, CheckCircle2, Siren } from 'lucide-react';
+import { Heart, Users, Stethoscope, MapPin, Phone, Clock, Shield, Award, Building2, ChevronRight, Newspaper, ArrowRight, Facebook, Twitter, Instagram, Linkedin, Mail, LogIn, Search, CheckCircle2, Siren, Menu, X } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,9 @@ const newsArticles = [{
 
 const PortalSelect = () => {
   const navigate = useNavigate();
+
+  // Mobile menu state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Callback State
   const [callbackOpen, setCallbackOpen] = useState(false);
@@ -132,22 +135,22 @@ const PortalSelect = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex items-center justify-between">
           {/* Branding */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-              <img src="/logo.png" alt="Medicare Hospital Logo" className="w-8 h-8 object-contain" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+              <img src="/logo.png" alt="Medicare Hospital Logo" className="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
             </div>
             <div>
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">Medicare Hospital</span>
+              <span className="text-lg sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">Medicare Hospital</span>
               <p className="text-xs text-muted-foreground hidden sm:block tracking-wide">Excellence in Healthcare</p>
             </div>
           </div>
 
-          {/* Right Side Actions */}
-          <div className="flex items-center gap-6">
-            <div className="mr-2">
+          {/* Right Side Actions - Desktop */}
+          <div className="hidden md:flex items-center gap-4">
+            <div>
               <ModeToggle />
             </div>
-            {/* Socials & Email - Hidden on mobile, visible on md+ */}
+            {/* Socials - Hidden on mobile, visible on lg+ */}
             <div className="hidden lg:flex items-center gap-4 border-r pr-6 border-border">
               <div className="flex items-center gap-3">
                 <Link to="/social-coming-soon" className="text-muted-foreground hover:text-[#0077b5] transition-colors"><Linkedin className="h-5 w-5" /></Link>
@@ -155,12 +158,10 @@ const PortalSelect = () => {
                 <Link to="/social-coming-soon" className="text-muted-foreground hover:text-[#1DA1F2] transition-colors"><Twitter className="h-5 w-5" /></Link>
                 <Link to="/social-coming-soon" className="text-muted-foreground hover:text-[#1877F2] transition-colors"><Facebook className="h-5 w-5" /></Link>
               </div>
-
             </div>
-
             {/* Emergency Button */}
             <Button
-              size="lg"
+              size="sm"
               className="gap-2 bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:scale-105 transition-all duration-200 relative"
               onClick={() => navigate('/emergency')}
             >
@@ -168,53 +169,93 @@ const PortalSelect = () => {
               <Siren className="w-4 h-4" />
               Emergency
             </Button>
-
             {/* Patient Login Button */}
-            <Button size="lg" className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300" onClick={() => navigate('/patient/login')}>
+            <Button size="sm" className="gap-2 shadow-lg hover:shadow-xl transition-all duration-300" onClick={() => navigate('/patient/login')}>
               <LogIn className="w-4 h-4" />
               Patient Login
             </Button>
           </div>
+
+          {/* Mobile right side */}
+          <div className="flex md:hidden items-center gap-2">
+            <ModeToggle />
+            <Button
+              size="sm"
+              className="gap-1 bg-red-600 hover:bg-red-700 text-white shadow-md relative px-2"
+              onClick={() => navigate('/emergency')}
+            >
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-400 animate-ping" />
+              <Siren className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle mobile menu"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden mt-3 pb-3 border-t border-border pt-3 flex flex-col gap-2">
+            <Button className="w-full justify-start gap-2" onClick={() => { navigate('/patient/login'); setMobileMenuOpen(false); }}>
+              <LogIn className="w-4 h-4" />
+              Patient Login
+            </Button>
+            <Button variant="destructive" className="w-full justify-start gap-2" onClick={() => { navigate('/emergency'); setMobileMenuOpen(false); }}>
+              <Siren className="w-4 h-4" />
+              Emergency
+            </Button>
+            <div className="flex items-center gap-3 pt-1">
+              <Link to="/social-coming-soon" className="text-muted-foreground hover:text-[#0077b5] transition-colors"><Linkedin className="h-5 w-5" /></Link>
+              <Link to="/social-coming-soon" className="text-muted-foreground hover:text-[#E4405F] transition-colors"><Instagram className="h-5 w-5" /></Link>
+              <Link to="/social-coming-soon" className="text-muted-foreground hover:text-[#1DA1F2] transition-colors"><Twitter className="h-5 w-5" /></Link>
+              <Link to="/social-coming-soon" className="text-muted-foreground hover:text-[#1877F2] transition-colors"><Facebook className="h-5 w-5" /></Link>
+            </div>
+          </div>
+        )}
       </div>
     </header>
 
     {/* Hero Section */}
-    <section className="relative bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 py-24 px-4 overflow-hidden">
+    <section className="relative bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 py-14 md:py-24 px-4 overflow-hidden">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=2600&auto=format&fit=crop')] bg-cover bg-center opacity-5" />
 
       <div className="max-w-6xl mx-auto text-center relative z-10">
-        <Badge className="mb-6 bg-primary/10 text-primary border-primary/20 text-sm px-6 py-2 rounded-full uppercase tracking-wider font-semibold">
+        <Badge className="mb-4 md:mb-6 bg-primary/10 text-primary border-primary/20 text-xs sm:text-sm px-4 sm:px-6 py-1.5 sm:py-2 rounded-full uppercase tracking-wider font-semibold">
           Trusted by 50,000+ Patients
         </Badge>
-        <h1 className="text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-8 leading-tight tracking-tight">
+        <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-gray-900 dark:text-white mb-5 md:mb-8 leading-tight tracking-tight">
           Your Health, Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">Commitment</span>
         </h1>
-        <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-xl md:text-2xl text-muted-foreground mb-7 md:mb-10 max-w-3xl mx-auto leading-relaxed">
           Experience world-class healthcare at Medicare Hospital. Our expert team and advanced technology ensure the best care for you and your family.
         </p>
-        <div className="flex flex-wrap justify-center gap-6">
-          <Button size="lg" className="h-16 px-10 text-xl rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300" onClick={() => navigate('/patient/register')}>
-            <Users className="h-6 w-6 mr-2" />
+        <div className="flex flex-col sm:flex-wrap sm:flex-row justify-center gap-3 sm:gap-4">
+          <Button size="lg" className="h-12 sm:h-16 px-6 sm:px-10 text-base sm:text-xl rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full sm:w-auto" onClick={() => navigate('/patient/register')}>
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
             Book Appointment
           </Button>
           <Button
             size="lg"
-            className="h-16 px-10 text-xl rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-red-600 hover:bg-red-700 text-white relative"
+            className="h-12 sm:h-16 px-6 sm:px-10 text-base sm:text-xl rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-red-600 hover:bg-red-700 text-white relative w-full sm:w-auto"
             onClick={() => navigate('/emergency')}
           >
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-400 animate-ping" />
-            <Siren className="h-6 w-6 mr-2" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-400 animate-ping" />
+            <Siren className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
             Emergency & First Aid
           </Button>
           <Button
             variant="outline"
             size="lg"
-            className="h-16 px-10 text-xl rounded-full border-2 bg-transparent hover:scale-95 hover:bg-gradient-to-r hover:from-red-500 hover:via-yellow-500 hover:to-green-500 hover:text-white hover:border-transparent hover:shadow-2xl transition-all duration-300 transform"
+            className="h-12 sm:h-16 px-6 sm:px-10 text-base sm:text-xl rounded-full border-2 bg-transparent hover:scale-95 hover:bg-gradient-to-r hover:from-red-500 hover:via-yellow-500 hover:to-green-500 hover:text-white hover:border-transparent hover:shadow-2xl transition-all duration-300 transform w-full sm:w-auto"
             asChild
           >
             <a href="#contact">
-              <Phone className="h-6 w-6 mr-2 animate-bounce" />
+              <Phone className="h-5 w-5 sm:h-6 sm:w-6 mr-2 animate-bounce" />
               Contact Us
             </a>
           </Button>
@@ -228,20 +269,20 @@ const PortalSelect = () => {
 
 
     {/* Our Doctors */}
-    <section className="py-20 px-4">
+    <section className="py-12 md:py-20 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 md:mb-12 gap-3">
           <div>
-            <h2 className="text-3xl font-bold mb-3">Our Expert Doctors</h2>
-            <p className="text-muted-foreground text-lg">Meet our team of experienced healthcare professionals</p>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3">Our Expert Doctors</h2>
+            <p className="text-muted-foreground text-sm sm:text-lg">Meet our team of experienced healthcare professionals</p>
           </div>
-          <Button variant="outline" className="hidden md:flex gap-2" onClick={() => navigate('/patient/login')}>
+          <Button variant="outline" className="hidden md:flex gap-2 shrink-0" onClick={() => navigate('/patient/login')}>
             View All Doctors <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
 
         {isDoctorsLoading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i} className="overflow-hidden h-[140px] animate-pulse">
                 <CardContent className="p-6">
@@ -258,7 +299,7 @@ const PortalSelect = () => {
             ))}
           </div>
         ) : doctors.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {doctors.map(doctor => (
               <DoctorCard key={doctor.id} name={doctor.name} specialty={doctor.specialty} experience={doctor.experience || undefined} rating={doctor.rating || 4.5} available={doctor.available ?? true} />
             ))}
@@ -274,15 +315,15 @@ const PortalSelect = () => {
     </section>
 
     {/* Departments */}
-    <section className="py-20 px-4 bg-blue-50/50 dark:bg-gray-900/50">
+    <section className="py-12 md:py-20 px-4 bg-blue-50/50 dark:bg-gray-900/50">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">Center of Excellence</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">Specialized departments equipped with advanced technology and staffed by leading specialists.</p>
+        <div className="text-center mb-10 md:mb-16">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Center of Excellence</h2>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto">Specialized departments equipped with advanced technology and staffed by leading specialists.</p>
         </div>
 
         {departments.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
             {departments.map(dept => (
               <Card
                 key={dept.id}
@@ -310,11 +351,11 @@ const PortalSelect = () => {
     </section>
 
     {/* AI Symptom Checker Button Section */}
-    <section className="py-16 px-4 bg-gradient-to-r from-blue-600/5 to-indigo-600/5">
-      <div className="max-w-4xl mx-auto text-center space-y-8">
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold">Unsure about your symptoms?</h2>
-          <p className="text-muted-foreground text-lg">Use our AI-powered tool to find the right specialist for you.</p>
+    <section className="py-12 md:py-16 px-4 bg-gradient-to-r from-blue-600/5 to-indigo-600/5">
+      <div className="max-w-4xl mx-auto text-center space-y-6 md:space-y-8">
+        <div className="space-y-3 md:space-y-4">
+          <h2 className="text-2xl sm:text-3xl font-bold">Unsure about your symptoms?</h2>
+          <p className="text-muted-foreground text-base sm:text-lg">Use our AI-powered tool to find the right specialist for you.</p>
         </div>
         <SymptomChecker />
       </div>
@@ -324,13 +365,13 @@ const PortalSelect = () => {
     <Testimonials />
 
     {/* Contact & Location */}
-    <section id="contact" className="py-20 px-4 bg-slate-900 text-white relative overflow-hidden">
+    <section id="contact" className="py-12 md:py-20 px-4 bg-slate-900 text-white relative overflow-hidden">
       {/* Abstract shapes */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="grid md:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-center">
           <div>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-medium mb-6 backdrop-blur-sm">
               <MapPin className="h-4 w-4 text-blue-400" />
@@ -363,7 +404,7 @@ const PortalSelect = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2 text-white">Working Hours</h3>
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-slate-300">
+                  <div className="grid grid-cols-2 gap-x-4 sm:gap-x-8 gap-y-2 text-slate-300 text-sm sm:text-base">
                     <span>Mon - Sat:</span>
                     <span className="text-white">9:00 AM - 8:00 PM</span>
                     <span>Sunday:</span>
@@ -464,9 +505,9 @@ const PortalSelect = () => {
     </section>
 
     {/* Footer */}
-    <footer className="bg-slate-950 text-slate-200 border-t border-slate-800 pt-16 pb-8">
+    <footer className="bg-slate-950 text-slate-200 border-t border-slate-800 pt-10 md:pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-10 md:mb-16">
           {/* Brand Column */}
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -569,9 +610,9 @@ const PortalSelect = () => {
           </div>
         </div>
 
-        <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
+        <div className="border-t border-slate-800 pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4 text-xs sm:text-sm text-slate-500">
           <p>© 2026 Medicare Hospital. All rights reserved.</p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
             <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>

@@ -72,7 +72,7 @@ const Appointments = () => {
   const filteredAppointments = appointments?.filter((apt) => {
     const patientName = apt.patients?.name?.toLowerCase() || "";
     const doctorName = apt.doctors?.name?.toLowerCase() || "";
-    const matchesSearch = 
+    const matchesSearch =
       patientName.includes(searchQuery.toLowerCase()) ||
       doctorName.includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || apt.status === statusFilter;
@@ -111,7 +111,7 @@ const Appointments = () => {
 
   return (
     <DashboardLayout title="Appointments" subtitle="Schedule and manage patient appointments">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Left Column - Calendar & Stats */}
         <div className="space-y-6">
           <Card className="card-shadow border-border/50">
@@ -180,8 +180,8 @@ const Appointments = () => {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search appointments..." 
+                  <Input
+                    placeholder="Search appointments..."
                     className="pl-10"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -220,15 +220,15 @@ const Appointments = () => {
                     <div className="divide-y divide-border">
                       {filteredAppointments?.map((apt) => (
                         <div key={apt.id} className="p-4 hover:bg-muted/30 transition-colors duration-200">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="flex flex-col items-center p-3 bg-muted/50 rounded-lg min-w-[80px]">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex flex-col items-center p-2 sm:p-3 bg-muted/50 rounded-lg min-w-[70px] sm:min-w-[80px] shrink-0">
                                 <Clock className="w-4 h-4 text-muted-foreground mb-1" />
-                                <span className="text-sm font-medium">{formatTime(apt.appointment_time)}</span>
+                                <span className="text-xs sm:text-sm font-medium">{formatTime(apt.appointment_time)}</span>
                                 <span className="text-xs text-muted-foreground">{apt.duration} min</span>
                               </div>
-                              <div className="flex items-center gap-4">
-                                <Avatar className="w-10 h-10">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-9 h-9 sm:w-10 sm:h-10 shrink-0">
                                   <AvatarFallback className="bg-secondary text-secondary-foreground">
                                     {apt.patients?.name?.split(" ").map(n => n[0]).join("") || "?"}
                                   </AvatarFallback>
@@ -236,7 +236,7 @@ const Appointments = () => {
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <User className="w-3 h-3 text-muted-foreground" />
-                                    <p className="font-medium text-foreground">{apt.patients?.name || "Unknown"}</p>
+                                    <p className="font-medium text-foreground text-sm">{apt.patients?.name || "Unknown"}</p>
                                   </div>
                                   <div className="flex items-center gap-2 mt-1">
                                     <Stethoscope className="w-3 h-3 text-muted-foreground" />
@@ -245,13 +245,11 @@ const Appointments = () => {
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <Badge variant="secondary" className="mb-1">{apt.type}</Badge>
-                                <Badge variant="outline" className={statusStyles[apt.status as keyof typeof statusStyles] || statusStyles.pending}>
-                                  {apt.status}
-                                </Badge>
-                              </div>
+                            <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 pl-[calc(70px+12px)] sm:pl-0">
+                              <Badge variant="secondary" className="text-xs">{apt.type}</Badge>
+                              <Badge variant="outline" className={statusStyles[apt.status as keyof typeof statusStyles] || statusStyles.pending}>
+                                {apt.status}
+                              </Badge>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon">
@@ -317,15 +315,15 @@ const Appointments = () => {
                     <div className="divide-y divide-border">
                       {patientAppointments?.map((apt) => (
                         <div key={apt.id} className="p-4 hover:bg-muted/30 transition-colors duration-200">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="flex flex-col items-center p-3 bg-muted/50 rounded-lg min-w-[100px]">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex flex-col items-center p-2 sm:p-3 bg-muted/50 rounded-lg min-w-[90px] sm:min-w-[100px] shrink-0">
                                 <CalendarDays className="w-4 h-4 text-muted-foreground mb-1" />
-                                <span className="text-sm font-medium">{format(new Date(apt.preferred_date), "MMM d, yyyy")}</span>
+                                <span className="text-xs sm:text-sm font-medium">{format(new Date(apt.preferred_date), "MMM d, yyyy")}</span>
                                 <span className="text-xs text-muted-foreground capitalize">{apt.preferred_time || "Any time"}</span>
                               </div>
-                              <div className="flex items-center gap-4">
-                                <Avatar className="w-10 h-10">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-9 h-9 sm:w-10 sm:h-10 shrink-0">
                                   <AvatarFallback className="bg-secondary text-secondary-foreground">
                                     {apt.patient_name?.split(" ").map(n => n[0]).join("") || "?"}
                                   </AvatarFallback>
@@ -333,15 +331,15 @@ const Appointments = () => {
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <User className="w-3 h-3 text-muted-foreground" />
-                                    <p className="font-medium text-foreground">{apt.patient_name}</p>
+                                    <p className="font-medium text-foreground text-sm">{apt.patient_name}</p>
                                   </div>
-                                  <div className="flex items-center gap-4 mt-1">
+                                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1">
                                     <div className="flex items-center gap-1">
                                       <PhoneCall className="w-3 h-3 text-muted-foreground" />
-                                      <p className="text-sm text-muted-foreground">{apt.patient_phone}</p>
+                                      <p className="text-xs sm:text-sm text-muted-foreground">{apt.patient_phone}</p>
                                     </div>
                                     {apt.patient_email && (
-                                      <div className="flex items-center gap-1">
+                                      <div className="hidden sm:flex items-center gap-1">
                                         <Mail className="w-3 h-3 text-muted-foreground" />
                                         <p className="text-sm text-muted-foreground">{apt.patient_email}</p>
                                       </div>
@@ -364,13 +362,11 @@ const Appointments = () => {
                                 </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <Badge variant="secondary" className="mb-1 capitalize">{apt.appointment_type}</Badge>
-                                <Badge variant="outline" className={statusStyles[apt.status as keyof typeof statusStyles] || statusStyles.pending}>
-                                  {apt.status}
-                                </Badge>
-                              </div>
+                            <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 pl-[calc(90px+12px)] sm:pl-0">
+                              <Badge variant="secondary" className="text-xs capitalize">{apt.appointment_type}</Badge>
+                              <Badge variant="outline" className={statusStyles[apt.status as keyof typeof statusStyles] || statusStyles.pending}>
+                                {apt.status}
+                              </Badge>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon">
