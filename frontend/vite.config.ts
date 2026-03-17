@@ -13,6 +13,11 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/vapi/, ""),
       },
+      "/api/murf": {
+        target: "https://api.murf.ai",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/murf/, ""),
+      },
     },
   },
   plugins: [react()],

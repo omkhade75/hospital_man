@@ -4,8 +4,9 @@ import { CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from 
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Bot, ArrowRight, RefreshCw, AlertCircle } from "lucide-react";
+import { Bot, ArrowRight, RefreshCw, AlertCircle, PhoneCall } from "lucide-react";
 import { toast } from "sonner";
+import { useMurfAI } from "@/hooks/useMurfAI";
 
 const symptoms = [
     { id: "headache", label: "Headache / Dizziness", department: "Neurology" },
@@ -21,6 +22,7 @@ export default function SymptomChecker() {
     const [step, setStep] = useState(1);
     const [selectedSymptom, setSelectedSymptom] = useState("");
     const [severity, setSeverity] = useState("");
+    const { speak } = useMurfAI();
 
     const handleNext = () => {
         if (step === 1 && !selectedSymptom) {
@@ -31,7 +33,24 @@ export default function SymptomChecker() {
             toast.error("Please select severity");
             return;
         }
-        setStep(step + 1);
+        const nextStep = step + 1;
+        setStep(nextStep);
+
+        // 🔊 Murf AI voice when results are shown (step 3)
+        if (nextStep === 3) {
+            const dept = symptoms.find(s => s.id === selectedSymptom)?.department || "General Medicine";
+            const urgency = severity === "severe"
+                ? "This appears to be a severe condition. Please seek emergency care immediately or visit the Emergency Department right away."
+                : severity === "moderate"
+                    ? "Based on your symptoms, we recommend you contact a doctor at the earliest opportunity."
+                    : "Based on your symptoms, please book an appointment with our specialists at your earliest convenience.";
+            speak({
+                text: `Based on your reported symptoms, we recommend visiting the ${dept} department. ${urgency} Our doctors are here to help you. Please do not delay seeking medical attention. Take care and stay safe!`,
+                voiceId: "en-US-natalie",
+                rate: 1.0,
+                pitch: 0,
+            });
+        }
     };
 
     const handleReset = () => {
@@ -118,6 +137,13 @@ export default function SymptomChecker() {
                             <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
                                 <p className="text-lg font-semibold text-blue-700">{getDepartment()}</p>
                                 <p className="text-sm text-blue-600/80 mt-1">Based on your symptoms</p>
+                            </div>
+                            <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-100 text-left">
+                                <PhoneCall className="h-5 w-5 text-green-600 shrink-0" />
+                                <div>
+                                    <p className="text-sm font-semibold text-green-800">Please contact a doctor</p>
+                                    <p className="text-xs text-green-700/80">Book an appointment for proper diagnosis and treatment.</p>
+                                </div>
                             </div>
                             <p className="text-sm text-muted-foreground mt-4">
                                 Please note: This is an AI suggestion, not a medical diagnosis.

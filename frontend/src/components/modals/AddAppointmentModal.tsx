@@ -34,6 +34,7 @@ import { usePatients } from "@/hooks/usePatients";
 import { useDoctors } from "@/hooks/useDoctors";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { useMurfAI } from "@/hooks/useMurfAI";
 
 const appointmentSchema = z.object({
   patient_id: z.string().min(1, "Please select a patient"),
@@ -55,6 +56,7 @@ interface AddAppointmentModalProps {
 
 const AddAppointmentModal = ({ open, onOpenChange, selectedDate }: AddAppointmentModalProps) => {
   const createAppointment = useCreateAppointment();
+  const { speak } = useMurfAI();
   const { data: patients } = usePatients();
   const { data: doctors } = useDoctors();
 
@@ -101,6 +103,14 @@ const AddAppointmentModal = ({ open, onOpenChange, selectedDate }: AddAppointmen
         description: `MAYA: I've booked your appointment with ${doctorName} at ${data.appointment_time} on ${format(data.appointment_date, "MMM dd")}.`,
         className: "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800",
         duration: 5000,
+      });
+
+      // 🔊 Murf AI voice confirmation
+      speak({
+        text: `Your appointment has been successfully booked with ${doctorName} on ${format(data.appointment_date, "MMMM do")} at ${data.appointment_time}. Please stay safe and take good care of yourself. We look forward to seeing you!`,
+        voiceId: "en-US-natalie",
+        rate: 1.0,
+        pitch: 0,
       });
 
       form.reset();

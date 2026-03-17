@@ -14,6 +14,7 @@ import {
     Siren, ChevronDown, ChevronUp, ArrowLeft, Ambulance,
     AlertTriangle, ShieldCheck, Clock, MapPin, PlayCircle,
 } from 'lucide-react';
+import { useMurfAI } from '@/hooks/useMurfAI';
 
 // ── First Aid Guides (static – no DB needed on public page) ───
 const FIRST_AID_GUIDES = [
@@ -235,6 +236,7 @@ function VideoCard({ v }: { v: typeof FIRST_AID_VIDEOS[0] }) {
 function AmbulanceModal() {
     const [open, setOpen] = useState(false);
     const [form, setForm] = useState({ patient_name: '', phone: '', address: '', emergency_type: 'general' });
+    const { speak } = useMurfAI();
 
     const req = useMutation({
         mutationFn: async () => {
@@ -248,6 +250,13 @@ function AmbulanceModal() {
             toast.success('🚑 Ambulance dispatched! Help is on the way.');
             setOpen(false);
             setForm({ patient_name: '', phone: '', address: '', emergency_type: 'general' });
+            // 🔊 Murf AI calming voice after ambulance booking
+            speak({
+                text: `Please stay calm, ${form.patient_name || 'your request has been received'}. Help is on the way. An ambulance has been dispatched to your location. Keep yourself safe and breathe slowly. Our team will reach you as soon as possible. If the situation worsens, please call 112 immediately.`,
+                voiceId: 'en-US-natalie',
+                rate: 0.9,
+                pitch: 0,
+            });
         },
         onError: (e: Error) => toast.error(e.message),
     });

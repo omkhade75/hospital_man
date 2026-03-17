@@ -14,7 +14,7 @@ MediCare HMS is a comprehensive, production-ready hospital management solution t
 
 ### 🤖 AI-Powered Intelligence
 - **Maya AI Chatbot**: A 24/7 intelligent health assistant for patient inquiries and navigation.
-- **Voice AI Integration**: (Via Vapi.ai) Automated appointment booking and patient callback systems using natural-sounding AI voices.
+- **Voice AI Integration**: (Via Vapi.ai & Murf AI) Automated appointment booking, patient callback systems using natural-sounding AI voices, and accessible text-to-speech for UI elements.
 - **Telephonic Triage**: Advanced AI voice handling for emergency calls and appointment confirmations.
 
 ### 🏥 Clinical & Administrative Modules
@@ -38,7 +38,7 @@ MediCare HMS is a comprehensive, production-ready hospital management solution t
 | **Data Fetching** | TanStack Query (React Query) |
 | **Backend (BaaS)** | Supabase (PostgreSQL, Auth, Storage) |
 | **Serverless Logic** | Supabase Edge Functions (Deno Runtime) |
-| **AI Ecosystem** | Vapi.ai (Voice AI), OpenAI GPT-4o (Chat/Logic) |
+| **AI Ecosystem** | Vapi.ai & Murf AI (Voice AI), OpenAI GPT-4o (Chat/Logic) |
 | **Utilities** | Recharts (Graphs), jsPDF (PDFs), date-fns |
 
 ---
@@ -89,7 +89,7 @@ The project follows a modern serverless and cloud-native architecture:
 
 This project is designed to showcase a professional integration of AI with traditional enterprise workflows. It demonstrates expertise in:
 - Full-stack development with **React & Supabase**.
-- **AI Voice Integration** using Vapi.ai.
+- **AI Voice Integration** using Vapi.ai & Murf AI.
 - **Complex State Management** and multi-role RBAC systems.
 - **Modern UI/UX** practices using Shadcn/UI and Tailwind.
 

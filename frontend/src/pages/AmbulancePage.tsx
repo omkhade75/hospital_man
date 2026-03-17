@@ -15,6 +15,7 @@ import {
     useCreateAmbulanceRequest, useUpdateAmbulanceRequest, useUpdateAmbulanceStatus, useUpsertAmbulance,
     type Ambulance, type AmbulanceStatus, type RequestStatus,
 } from '@/hooks/useAmbulance';
+import { useMurfAI } from '@/hooks/useMurfAI';
 
 // ── Status configs ────────────────────────────────────────────
 const AMB_STATUS: Record<AmbulanceStatus, { label: string; cls: string; dot: string }> = {
@@ -49,6 +50,7 @@ function BookAmbulanceModal() {
         longitude: undefined as number | undefined,
     });
     const create = useCreateAmbulanceRequest();
+    const { speak } = useMurfAI();
 
     const detectLocation = () => {
         setLocating(true);
@@ -71,6 +73,13 @@ function BookAmbulanceModal() {
         await create.mutateAsync(form);
         setOpen(false);
         setForm({ patient_name: '', phone: '', address: '', emergency_type: 'general', latitude: undefined, longitude: undefined });
+        // 🔊 Murf AI calming voice after ambulance booking
+        speak({
+            text: `Please stay calm, ${form.patient_name || 'help is coming'}. Your ambulance request has been dispatched successfully. Help is on its way to your location. Keep yourself safe, breathe slowly, and stay on the line. Our team will reach you shortly.`,
+            voiceId: 'en-US-natalie',
+            rate: 0.9,
+            pitch: 0,
+        });
     };
 
     return (
