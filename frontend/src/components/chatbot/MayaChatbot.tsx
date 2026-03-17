@@ -139,9 +139,26 @@ const MayaChatbot = () => {
       });
     });
 
-    vapi.on("error", (_err: unknown) => {
+    vapi.on("error", (err: any) => {
       setIsCallActive(false);
-      // Fail silently or toast
+      console.error("Vapi Call Error:", err);
+      toast({
+        title: "Call Error",
+        description: err?.error?.message || err?.message || "The voice assistant encountered an error and could not reply.",
+        variant: "destructive",
+      });
+    });
+
+    vapi.on("message", (msg: any) => {
+      if (msg.type === "transcript" && msg.transcriptType === "final") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: msg.role === "assistant" ? "assistant" : "user",
+            content: msg.transcript
+          }
+        ]);
+      }
     });
 
     return () => {
@@ -189,8 +206,18 @@ BEHAVIOR RULES:
 - Never say you are an AI. Just be helpful.
 - If you cannot answer, say "Main aapko staff se connect karti hoon."`;
 
-      // Use the pre-configured assistant ID for maximum reliability and speed
-      vapiRef.current?.start("adaa3583-2d8a-483e-8337-f0b9c37ec16f");
+      // Use the pre-configured assistant ID from environment variables, fallback to the known ID
+      const assistantId = import.meta.env.VITE_VAPI_ASSISTANT_ID || "adaa3583-2d8a-483e-8337-f0b9c37ec16f";
+
+      try {
+        vapiRef.current?.start(assistantId);
+      } catch (err: any) {
+        toast({
+          title: "Startup Error",
+          description: "Failed to initialize the voice assistant: " + err.message,
+          variant: "destructive"
+        });
+      }
     }
   };
 
