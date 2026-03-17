@@ -24,11 +24,13 @@ import { cn } from '@/lib/utils';
 import MayaChatbot from '@/components/chatbot/MayaChatbot';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import InsuranceClaimForm from "@/components/forms/InsuranceClaimForm";
+import { useMurfAI } from '@/hooks/useMurfAI';
 
 const PatientDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { speak: murfSpeak } = useMurfAI();
 
   // Welcome Overlay State
   const [showWelcome, setShowWelcome] = useState(true);
@@ -177,6 +179,7 @@ const PatientDashboard = () => {
     },
     onSuccess: () => {
       toast.success('Callback request submitted! We will call you soon.');
+      murfSpeak("Successfully requested for callback");
       setCallbackOpen(false);
       resetCallbackForm();
 

@@ -23,6 +23,7 @@ import HealthPackages from '@/components/landing/HealthPackages';
 import Testimonials from '@/components/landing/Testimonials';
 import SymptomChecker from '@/components/landing/SymptomChecker';
 import { ModeToggle } from '@/components/ui/mode-toggle';
+import { useMurfAI } from '@/hooks/useMurfAI';
 const newsArticles = [{
   title: 'New Cardiac Care Wing Opens',
   excerpt: 'Medicare Hospital is proud to announce the opening of our new cardiac care wing, equipped with the latest diagnostic and treatment technologies.',
@@ -45,6 +46,7 @@ const newsArticles = [{
 
 const PortalSelect = () => {
   const navigate = useNavigate();
+  const { speak } = useMurfAI();
 
   // Mobile menu state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -77,6 +79,7 @@ const PortalSelect = () => {
     },
     onSuccess: () => {
       toast.success('Callback request submitted! Our AI agent will call you shortly.');
+      speak("Successfully requested for callback");
       setCallbackOpen(false);
       setCallbackName('');
       setCallbackPhone('');
