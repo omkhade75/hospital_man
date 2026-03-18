@@ -303,6 +303,22 @@ Do NOT say you are an AI.`;
       body: JSON.stringify({
         phoneNumberId: VAPI_PHONE_NUMBER_ID!,
         assistantId: "adaa3583-2d8a-483e-8337-f0b9c37ec16f",
+        assistantOverrides: {
+          firstMessage: firstMessage,
+          model: {
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt
+              }
+            ]
+          },
+          transcriber: {
+            provider: "deepgram",
+            model: "nova-2",
+            language: "hi"
+          }
+        },
         customer: {
           number: normalizedPhone,
           name: patientName,

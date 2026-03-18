@@ -206,11 +206,30 @@ BEHAVIOR RULES:
 - Never say you are an AI. Just be helpful.
 - If you cannot answer, say "Main aapko staff se connect karti hoon."`;
 
-      // Use the pre-configured assistant ID from environment variables, fallback to the known ID
-      const assistantId = import.meta.env.VITE_VAPI_ASSISTANT_ID || "adaa3583-2d8a-483e-8337-f0b9c37ec16f";
-
       try {
-        vapiRef.current?.start(assistantId);
+        vapiRef.current?.start({
+          name: "Maya Receptionist",
+          firstMessage: "Haan ji, main aapki kaise madad kar sakti hoon?",
+          transcriber: {
+            provider: "deepgram",
+            model: "nova-2",
+            language: "hi" // Support Hindi/Hinglish
+          },
+          voice: {
+            provider: "11labs",
+            voiceId: "paula"
+          },
+          model: {
+            provider: "openai",
+            model: "gpt-3.5-turbo",
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt
+              }
+            ]
+          }
+        });
       } catch (err: any) {
         toast({
           title: "Startup Error",
