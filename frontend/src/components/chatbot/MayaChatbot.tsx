@@ -62,6 +62,7 @@ const MayaChatbot = () => {
   const [bookingState, setBookingState] = useState<{ step: 'none' | 'doctor_name'; data?: Record<string, unknown> }>({ step: 'none' });
   const [language, setLanguage] = useState<"en" | "hi" | "mr">("en");
   const [isCallActive, setIsCallActive] = useState(false);
+  const isCallActiveRef = useRef(false);
   const vapiRef = useRef<Vapi | null>(null);
 
   const speak = useCallback((text: string) => {
@@ -85,7 +86,7 @@ const MayaChatbot = () => {
       utterance.onend = () => {
         setIsSpeaking(false);
         // If we are in active call mode, automatically start listening again when the bot finishes talking!
-        if (isCallActive) {
+        if (isCallActiveRef.current) {
           setTimeout(() => autoNativeListen(), 300);
         }
       };
@@ -98,10 +99,10 @@ const MayaChatbot = () => {
         variant: "destructive"
       });
     }
-  }, [language, toast, isCallActive]);
+  }, [language, toast]);
 
   const autoNativeListen = useCallback(() => {
-    if (!isCallActive) return;
+    if (!isCallActiveRef.current) return;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
@@ -198,6 +199,7 @@ const MayaChatbot = () => {
   const toggleVapiCall = () => {
     if (isCallActive) {
       setIsCallActive(false);
+      isCallActiveRef.current = false;
       setIsListening(false);
       window.speechSynthesis.cancel();
       toast({
@@ -208,6 +210,7 @@ const MayaChatbot = () => {
     }
 
     setIsCallActive(true);
+    isCallActiveRef.current = true;
     toast({
       title: "Call Started",
       description: "Connected to Maya Voice Assistant.",
