@@ -79,7 +79,7 @@ const PortalSelect = () => {
     },
     onSuccess: () => {
       toast.success('Callback request submitted! Our AI agent will call you shortly.');
-      speak("Successfully requested for callback");
+      speak("Successfully requested callback. Our AI agent will call you shortly.");
       setCallbackOpen(false);
       setCallbackName('');
       setCallbackPhone('');

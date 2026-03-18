@@ -179,7 +179,7 @@ const PatientDashboard = () => {
     },
     onSuccess: () => {
       toast.success('Callback request submitted! We will call you soon.');
-      murfSpeak("Successfully requested for callback");
+      murfSpeak("Successfully requested callback. Our AI agent will call you shortly.");
       setCallbackOpen(false);
       resetCallbackForm();
 
