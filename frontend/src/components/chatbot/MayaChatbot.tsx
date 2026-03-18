@@ -182,13 +182,14 @@ const MayaChatbot = () => {
         return;
       }
 
-      const systemPrompt = `You are Maya, a warm and professional AI receptionist for Star Hospital in India.
+      const systemPrompt = `You are Maya, a sweet, soft-spoken, and highly knowledgeable Asian medical AI receptionist for Star Hospital.
 
 PERSONA & LANGUAGE:
-- Speak concisely and clearly. Keep answers to 1-2 short sentences.
-- Help patients book appointments.
-- Answer questions about hospital services, doctors, visiting hours, reports.
-- Be a warm, empathetic, and knowledgeable assistant.
+- You MUST speak in natural Hinglish (a conversational mix of Hindi and English). Do not speak only in Hindi or only in English. Use both.
+- Speak in a light, sweet, and comforting tone.
+- You are a highly knowledgeable medical expert. Ensure all your answers are fully correct, medically accurate, and reliable.
+- Keep answers VERY SHORT (1-2 sentences). Do not hallucinate. Provide only fully correct information.
+- Help patients book appointments or answer health questions accurately.
 
 HOSPITAL INFO:
 - Hospital Name: Star Hospital
@@ -204,16 +205,23 @@ HOSPITAL INFO:
         // We omit experimental providers like '11labs' or strictly forcing 'deepgram' 
         // which might crash if the account doesn't support them.
         vapiRef.current?.start(assistantId, {
-          firstMessage: "Hello, I am Maya. How can I help you today?",
+          firstMessage: "Hello, I am Maya. Kaise madad kar sakti hu aapki?",
           model: {
             provider: "openai",
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o-mini",
+            temperature: 0.2,
+            maxTokens: 150,
             messages: [
               {
                 role: "system",
                 content: systemPrompt
               }
             ]
+          },
+          voice: {
+            provider: "openai",
+            voiceId: "shimmer",
+            speed: 1.15
           }
         });
       } catch (err: any) {
@@ -262,13 +270,13 @@ HOSPITAL INFO:
         default: "I'm listening. Could you please provide more details so I can assist you better?"
       },
       hi: {
-        greeting: "नमस्ते! मैं माया हूँ, आपकी मेडिकेयर सहायक। आज मैं आपकी स्वास्थ्य या अस्पताल सेवाओं के संबंध में कैसे मदद कर सकती हूँ?",
-        appointment: "मैं अपॉइंटमेंट बुक करने में आपकी मदद कर सकती हूँ। आप किस डॉक्टर से परामर्श करना चाहेंगे?",
-        doctor: "हमारे पास विश्व स्तरीय विशेषज्ञ हैं। कृपया मुझे उस डॉक्टर का नाम बताएं जिसे आप ढूंढ रहे हैं।",
-        report: "आपकी मेडिकल रिपोर्ट हमारे पास सुरक्षित हैं।",
-        billing: "आप 'बिलिंग' अनुभाग में अपने सभी भुगतान ट्रैक कर सकते हैं।",
-        emergency: "🚨 आपातकालीन चेतावनी: कृपया तुरंत 102 पर कॉल करें।",
-        default: "मैं सुन रही हूँ। कृपया अधिक विवरण दें।"
+        greeting: "Namaste! Main Maya, aapki Medicare assistant. Main aaj aapki health ya hospital services ke baare mein kaise help kar sakti hu?",
+        appointment: "Main aapki appointment book karne mein help kar sakti hu. Aap kis doctor se consult karna chahenge?",
+        doctor: "Hamare paas world-class specialists hain. Please aap jis doctor ko dhoondh rahe hain unka naam batayein.",
+        report: "Aapki medical reports hamare paas secure hain.",
+        billing: "Aap 'Billing' section mein apne sabhi payments track kar sakte hain.",
+        emergency: "🚨 EMERGENCY ALERT: Kripaya turant 102 par call karein.",
+        default: "Main sun rahi hu. Please aur details provide karein."
       },
       mr: {
         greeting: "नमस्कार! मी माया आहे. मी तुम्हाला कशी मदत करू शकते?",
@@ -341,7 +349,7 @@ HOSPITAL INFO:
 
         if (initialResponse === "APPOINTMENT_TRIGGER") {
           responseText = language === 'en' ? "Sure, I can help. Which doctor would you like to see?" :
-            (language === 'hi' ? "ज़रूर, मैं मदद कर सकती हूँ। आप किस डॉक्टर को दिखाना चाहेंगे?" : "हो नक्कीच. तुम्हाला कोणत्या डॉक्टरांकडे जायचे आहे?");
+            (language === 'hi' ? "Zaroor, main help kar sakti hu. Aap kis doctor ko dikhana chahenge?" : "हो नक्कीच. तुम्हाला कोणत्या डॉक्टरांकडे जायचे आहे?");
           setBookingState({ step: 'doctor_name' });
         } else {
           responseText = initialResponse;
