@@ -83,13 +83,7 @@ const MayaChatbot = () => {
       if (voice) utterance.voice = voice;
 
       utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        // If we are in active call mode, automatically start listening again when the bot finishes talking!
-        if (isCallActiveRef.current) {
-          setTimeout(() => autoNativeListen(), 300);
-        }
-      };
+      utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
       window.speechSynthesis.speak(utterance);
     } else {
@@ -100,28 +94,6 @@ const MayaChatbot = () => {
       });
     }
   }, [language, toast]);
-
-  const autoNativeListen = useCallback(() => {
-    if (!isCallActiveRef.current) return;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = language === 'hi' ? 'hi-IN' : (language === 'mr' ? 'mr-IN' : 'en-US');
-      recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const transcript = event.results[0][0].transcript;
-        if (transcript.trim().length > 0) {
-          triggerSendMessage(transcript);
-        }
-      };
-      recognition.start();
-    } catch (e) {
-      console.log("Speech recognition error:", e);
-    }
-  }, [isCallActive, language]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -195,39 +167,63 @@ const MayaChatbot = () => {
     };
   }, [toast]);
 
-  // Custom highly reliable AI Voice Loop (Bypasses Vapi Dashboard broken token issue)
   const toggleVapiCall = () => {
     if (isCallActive) {
-      setIsCallActive(false);
-      isCallActiveRef.current = false;
-      setIsListening(false);
-      window.speechSynthesis.cancel();
-      toast({
-        title: "Call Ended",
-        description: "Voice session finished.",
-      });
-      return;
+      vapiRef.current?.stop();
+    } else {
+      const publicKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
+
+      if (!publicKey || publicKey === "your_vapi_public_key_here") {
+        toast({
+          title: "Configuration Required",
+          description: "Please add your VITE_VAPI_PUBLIC_KEY to the .env file.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const systemPrompt = `You are Maya, a warm and professional AI receptionist for Star Hospital in India.
+
+PERSONA & LANGUAGE:
+- Speak concisely and clearly. Keep answers to 1-2 short sentences.
+- Help patients book appointments.
+- Answer questions about hospital services, doctors, visiting hours, reports.
+- Be a warm, empathetic, and knowledgeable assistant.
+
+HOSPITAL INFO:
+- Hospital Name: Star Hospital
+- Emergency: 102
+- Contact: ${import.meta.env.VITE_HOSPITAL_PHONE_NUMBER || "+91-123-456-7890"}
+- Departments: Cardiology, Orthopedics, General Medicine, Gynecology, Pediatrics, Neurology.
+`;
+
+      try {
+        const assistantId = import.meta.env.VITE_VAPI_ASSISTANT_ID || "adaa3583-2d8a-483e-8337-f0b9c37ec16f";
+
+        // Use vapi.start and provide assistant overrides to ensure stability!
+        // We omit experimental providers like '11labs' or strictly forcing 'deepgram' 
+        // which might crash if the account doesn't support them.
+        vapiRef.current?.start(assistantId, {
+          firstMessage: "Hello, I am Maya. How can I help you today?",
+          model: {
+            provider: "openai",
+            model: "gpt-3.5-turbo",
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt
+              }
+            ]
+          }
+        });
+      } catch (err: any) {
+        toast({
+          title: "Voice Assistant Error",
+          description: "Could not connect to Vapi server: " + err.message,
+          variant: "destructive"
+        });
+      }
     }
-
-    setIsCallActive(true);
-    isCallActiveRef.current = true;
-    toast({
-      title: "Call Started",
-      description: "Connected to Maya Voice Assistant.",
-    });
-
-    // Start conversation Loop natively!
-    const initialGreeting = language === 'hi' ? "हाँ जी, मैं आपकी कैसे मदद कर सकती हूँ?" :
-      (language === 'mr' ? "हो नक्कीच, मी तुमची कशी मदत करू शकते?" :
-        "Hello, I am Maya. How can I help you today?");
-
-    setMessages(prev => [...prev, { role: "assistant", content: initialGreeting }]);
-
-    // Speak first message, then listen!
-    speak(initialGreeting);
-
-    // We will automatically start listening after speaking using the utterance.onend hook inside `speak()`
-    // We modify `speak()` slightly below to handle auto-listening if in call mode!
   };
 
   const startListening = () => {
