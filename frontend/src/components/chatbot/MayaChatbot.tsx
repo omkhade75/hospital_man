@@ -21,6 +21,7 @@ interface SpeechRecognitionEvent extends Event {
 }
 
 interface SpeechRecognition extends EventTarget {
+  lang: string;
   onstart: ((this: SpeechRecognition, ev: Event) => void) | null;
   onend: ((this: SpeechRecognition, ev: Event) => void) | null;
   onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void) | null;
@@ -71,7 +72,7 @@ const MayaChatbot = () => {
 
       let voice = null;
       if (language === 'hi') {
-        voice = voices.find(v => v.lang.includes('hi') || v.name.includes('Hindi'));
+        voice = voices.find(v => v.lang.includes('hi') || v.name.includes('Hindi') || v.name.includes('India'));
       } else if (language === 'mr') {
         voice = voices.find(v => v.lang.includes('mr') || v.name.includes('Marathi'));
       } else {
@@ -79,10 +80,15 @@ const MayaChatbot = () => {
       }
 
       if (voice) utterance.voice = voice;
-      // If specific language voice not found, it will use default, which is acceptable fallback
 
       utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        // If we are in active call mode, automatically start listening again when the bot finishes talking!
+        if (isCallActive) {
+          setTimeout(() => autoNativeListen(), 300);
+        }
+      };
       utterance.onerror = () => setIsSpeaking(false);
       window.speechSynthesis.speak(utterance);
     } else {
@@ -92,7 +98,29 @@ const MayaChatbot = () => {
         variant: "destructive"
       });
     }
-  }, [language, toast]);
+  }, [language, toast, isCallActive]);
+
+  const autoNativeListen = useCallback(() => {
+    if (!isCallActive) return;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = language === 'hi' ? 'hi-IN' : (language === 'mr' ? 'mr-IN' : 'en-US');
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript.trim().length > 0) {
+          triggerSendMessage(transcript);
+        }
+      };
+      recognition.start();
+    } catch (e) {
+      console.log("Speech recognition error:", e);
+    }
+  }, [isCallActive, language]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -166,78 +194,37 @@ const MayaChatbot = () => {
     };
   }, [toast]);
 
+  // Custom highly reliable AI Voice Loop (Bypasses Vapi Dashboard broken token issue)
   const toggleVapiCall = () => {
     if (isCallActive) {
-      vapiRef.current?.stop();
-    } else {
-      const publicKey = import.meta.env.VITE_VAPI_PUBLIC_KEY;
-
-      if (!publicKey || publicKey === "your_vapi_public_key_here") {
-        toast({
-          title: "Configuration Required",
-          description: "Please add your VITE_VAPI_PUBLIC_KEY to the .env file.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const systemPrompt = `You are Maya, a warm and professional AI receptionist for Star Hospital in India.
-
-PERSONA & LANGUAGE:
-- Always speak in natural Hinglish (a mix of Hindi and English, the way Indians speak daily).
-- Example: "Haan ji, main aapki help kar sakti hoon. Kaunse doctor ke saath appointment chahiye?"
-- If the user speaks only English, respond in clear, warm Indian-accented English.
-- Use natural Indian phrases: "ji", "haan", "bilkul", "zaroor", "koi baat nahi", "shukriya", "dhanyawad".
-
-ROLE & CAPABILITIES:
-- Help patients book appointments (ask for doctor name and preferred time).
-- Answer questions about hospital services, doctors, visiting hours, reports.
-- Provide emergency contact information when needed.
-- Be a warm, empathetic, and knowledgeable healthcare assistant.
-
-HOSPITAL INFO:
-- Hospital Name: Star Hospital (Also called Medicare)
-- Emergency: 102
-- Contact: ${import.meta.env.VITE_HOSPITAL_PHONE_NUMBER || "+91-123-456-7890"}
-- Departments: Cardiology, Orthopedics, General Medicine, Gynecology, Pediatrics, Neurology.
-
-BEHAVIOR RULES:
-- Keep every response SHORT (1-3 sentences maximum) to reduce latency.
-- Never say you are an AI. Just be helpful.
-- If you cannot answer, say "Main aapko staff se connect karti hoon."`;
-
-      try {
-        vapiRef.current?.start({
-          name: "Maya Receptionist",
-          firstMessage: "Haan ji, main aapki kaise madad kar sakti hoon?",
-          transcriber: {
-            provider: "deepgram",
-            model: "nova-2",
-            language: "hi" // Support Hindi/Hinglish
-          },
-          voice: {
-            provider: "11labs",
-            voiceId: "paula"
-          },
-          model: {
-            provider: "openai",
-            model: "gpt-3.5-turbo",
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt
-              }
-            ]
-          }
-        });
-      } catch (err: any) {
-        toast({
-          title: "Startup Error",
-          description: "Failed to initialize the voice assistant: " + err.message,
-          variant: "destructive"
-        });
-      }
+      setIsCallActive(false);
+      setIsListening(false);
+      window.speechSynthesis.cancel();
+      toast({
+        title: "Call Ended",
+        description: "Voice session finished.",
+      });
+      return;
     }
+
+    setIsCallActive(true);
+    toast({
+      title: "Call Started",
+      description: "Connected to Maya Voice Assistant.",
+    });
+
+    // Start conversation Loop natively!
+    const initialGreeting = language === 'hi' ? "हाँ जी, मैं आपकी कैसे मदद कर सकती हूँ?" :
+      (language === 'mr' ? "हो नक्कीच, मी तुमची कशी मदत करू शकते?" :
+        "Hello, I am Maya. How can I help you today?");
+
+    setMessages(prev => [...prev, { role: "assistant", content: initialGreeting }]);
+
+    // Speak first message, then listen!
+    speak(initialGreeting);
+
+    // We will automatically start listening after speaking using the utterance.onend hook inside `speak()`
+    // We modify `speak()` slightly below to handle auto-listening if in call mode!
   };
 
   const startListening = () => {
@@ -333,10 +320,10 @@ BEHAVIOR RULES:
     }
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+  const triggerSendMessage = async (textInput: string) => {
+    if (!textInput.trim() || isLoading) return;
 
-    const trimmedInput = input.trim().slice(0, MAX_MESSAGE_LENGTH);
+    const trimmedInput = textInput.trim().slice(0, MAX_MESSAGE_LENGTH);
     const userMessage: Message = { role: "user", content: trimmedInput };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -371,6 +358,10 @@ BEHAVIOR RULES:
     } catch {
       setIsLoading(false);
     }
+  };
+
+  const sendMessage = () => {
+    triggerSendMessage(input);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
