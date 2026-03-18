@@ -207,7 +207,8 @@ BEHAVIOR RULES:
 - If you cannot answer, say "Main aapko staff se connect karti hoon."`;
 
       try {
-        vapiRef.current?.start({
+        const assistantId = import.meta.env.VITE_VAPI_ASSISTANT_ID || "adaa3583-2d8a-483e-8337-f0b9c37ec16f";
+        vapiRef.current?.start(assistantId, {
           name: "Maya Receptionist",
           firstMessage: "Haan ji, main aapki kaise madad kar sakti hoon?",
           transcriber: {
