@@ -203,58 +203,62 @@ const AdminSystemHealth = () => {
     }
   };
 
-  // ─── Edge Function Check ──────────────────────────────────────
-
   const checkEdgeFunction = async (
     fnName: string
   ): Promise<EdgeFunctionCheck> => {
     try {
       const start = performance.now();
-      // Send OPTIONS/empty body to just see if the function endpoint responds
       const { error } = await supabase.functions.invoke(fnName, {
         method: "POST",
         body: { healthCheck: true },
       });
       const latency = performance.now() - start;
 
-      // Edge functions may return errors for health-check payloads,
-      // but as long as they RESPOND, the function is deployed & reachable
-      if (error) {
-        const errMsg =
-          typeof error === "object" && "message" in error
-            ? (error as any).message
-            : String(error);
+      // If no error at all, it's definitely healthy
+      if (!error) {
+        return {
+          name: fnName,
+          status: latency > 3000 ? "warning" : "healthy",
+          latencyMs: latency,
+          error: null,
+        };
+      }
 
-        // A 4xx means the function IS running, just rejecting our test payload
-        if (
-          errMsg.includes("400") ||
-          errMsg.includes("401") ||
-          errMsg.includes("403") ||
-          errMsg.includes("Invalid") ||
-          errMsg.includes("Missing")
-        ) {
-          return {
-            name: fnName,
-            status: "healthy",
-            latencyMs: latency,
-            error: null,
-          };
-        }
+      const errMsg =
+        typeof error === "object" && "message" in error
+          ? (error as any).message
+          : String(error);
 
-        // 404 or boot failure means real problem
+      // "Edge Function returned a non-2xx status code" means the function
+      // IS deployed and DID respond — it just rejected our health-check payload
+      // (e.g. 400 missing params, 401 unauthorized, 500 bad input).
+      // This is HEALTHY — the function is alive and reachable.
+      if (errMsg.includes("non-2xx status code")) {
+        return {
+          name: fnName,
+          status: latency > 3000 ? "warning" : "healthy",
+          latencyMs: latency,
+          error: null,
+        };
+      }
+
+      // "Failed to send a request to the Edge Function" means the function
+      // truly doesn't exist, failed to boot, or is not deployed.
+      if (errMsg.includes("Failed to send")) {
         return {
           name: fnName,
           status: "error",
           latencyMs: latency,
-          error: errMsg,
+          error: "Function not deployed or failed to boot",
         };
       }
 
+      // Any other error — report as warning (reachable but something odd)
       return {
         name: fnName,
-        status: latency > 3000 ? "warning" : "healthy",
+        status: "warning",
         latencyMs: latency,
-        error: null,
+        error: errMsg,
       };
     } catch (err: any) {
       return {
@@ -288,35 +292,42 @@ const AdminSystemHealth = () => {
   const checkRealtime = (): Promise<RealtimeCheck> => {
     return new Promise((resolve) => {
       const start = performance.now();
+      let resolved = false;
+
+      const done = (result: RealtimeCheck) => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeout);
+        try { channel.unsubscribe(); } catch {}
+        resolve(result);
+      };
+
       const timeout = setTimeout(() => {
-        channel.unsubscribe();
-        resolve({
-          status: "error",
-          latencyMs: null,
-          error: "Realtime connection timed out (5s)",
+        done({
+          status: "warning",
+          latencyMs: performance.now() - start,
+          error: "Realtime connection slow (>5s) but may still work",
         });
       }, 5000);
 
       const channel = supabase
         .channel("health-check-" + Date.now())
         .subscribe((status) => {
-          clearTimeout(timeout);
-          const latency = performance.now() - start;
-          channel.unsubscribe();
-
           if (status === "SUBSCRIBED") {
-            resolve({
+            const latency = performance.now() - start;
+            done({
               status: latency > 2000 ? "warning" : "healthy",
               latencyMs: latency,
               error: null,
             });
-          } else {
-            resolve({
-              status: "warning",
-              latencyMs: latency,
-              error: `Subscription status: ${status}`,
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            done({
+              status: "error",
+              latencyMs: performance.now() - start,
+              error: `Realtime channel: ${status}`,
             });
           }
+          // Ignore CLOSED and other intermediate states — wait for SUBSCRIBED or error
         });
     });
   };
