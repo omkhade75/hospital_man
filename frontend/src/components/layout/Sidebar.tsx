@@ -21,6 +21,7 @@ import {
   Siren,
   Truck,
   HeartPulse,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -173,6 +174,7 @@ const Sidebar = ({ className, onLinkClick }: SidebarProps) => {
       { icon: HeartPulse, label: "Doctor Management", path: "/admin/doctors" },
       { icon: UserCheck, label: "Staff Approvals", path: "/staff/approvals", badge: pendingCount },
       { icon: Activity, label: "AI Tools", path: "/admin/ai-tools" },
+      { icon: ShieldCheck, label: "AI System Health", path: "/admin/system-health" },
       { icon: Banknote, label: "Manage Salaries", path: "/salaries" },
       { icon: Info, label: "System Info", path: "/admin/info" }
     ] : []),

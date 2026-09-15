@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,8 +65,23 @@ const Appointments = () => {
   const deleteAppointment = useDeleteAppointment();
   const vapiCall = useVapiCall();
 
-  const pendingPatientAppointments = patientAppointments?.filter(a => a.status === "pending") || [];
-  const confirmedPatientAppointments = patientAppointments?.filter(a => a.status === "confirmed") || [];
+  const { user } = useAuth();
+  const { data: isAdmin = false } = useQuery({
+    queryKey: ['is-admin', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: user.id.toString(),
+        _role: 'admin'
+      });
+      if (error) return false;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const pendingPatientAppointments = isAdmin ? patientAppointments?.filter(a => a.status === "pending") || [] : [];
+  const confirmedPatientAppointments = isAdmin ? patientAppointments?.filter(a => a.status === "confirmed") || [] : [];
 
   const handleAICall = async (appointmentId: string, action: 'confirm' | 'reminder' | 'cancel') => {
     await vapiCall.mutateAsync({ appointmentId, action });
@@ -159,15 +177,17 @@ const Appointments = () => {
                   <CalendarDays className="w-4 h-4" />
                   Scheduled
                 </TabsTrigger>
-                <TabsTrigger value="requests" className="gap-2">
-                  <User className="w-4 h-4" />
-                  Patient Requests
-                  {pendingPatientAppointments.length > 0 && (
-                    <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                      {pendingPatientAppointments.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
+                {isAdmin && (
+                  <TabsTrigger value="requests" className="gap-2">
+                    <User className="w-4 h-4" />
+                    Patient Requests
+                    {pendingPatientAppointments.length > 0 && (
+                      <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                        {pendingPatientAppointments.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                )}
               </TabsList>
               <Button onClick={() => setShowAddModal(true)}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -293,106 +313,108 @@ const Appointments = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="requests" className="mt-6 space-y-4">
-              {/* Patient Requests List */}
-              <Card className="card-shadow border-border/50">
-                <CardHeader className="border-b border-border">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    Patient Appointment Requests
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {isLoadingPatientAppts ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    </div>
-                  ) : patientAppointments?.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      No patient appointment requests yet.
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-border">
-                      {patientAppointments?.map((apt) => (
-                        <div key={apt.id} className="p-4 hover:bg-muted/30 transition-colors duration-200">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <div className="flex flex-col items-center p-2 sm:p-3 bg-muted/50 rounded-lg min-w-[90px] sm:min-w-[100px] shrink-0">
-                                <CalendarDays className="w-4 h-4 text-muted-foreground mb-1" />
-                                <span className="text-xs sm:text-sm font-medium">{format(new Date(apt.preferred_date), "MMM d, yyyy")}</span>
-                                <span className="text-xs text-muted-foreground capitalize">{apt.preferred_time || "Any time"}</span>
-                              </div>
+            {isAdmin && (
+              <TabsContent value="requests" className="mt-6 space-y-4">
+                {/* Patient Requests List */}
+                <Card className="card-shadow border-border/50">
+                  <CardHeader className="border-b border-border">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <User className="w-5 h-5" />
+                      Patient Appointment Requests
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {isLoadingPatientAppts ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                      </div>
+                    ) : patientAppointments?.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        No patient appointment requests yet.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {patientAppointments?.map((apt) => (
+                          <div key={apt.id} className="p-4 hover:bg-muted/30 transition-colors duration-200">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
-                                <Avatar className="w-9 h-9 sm:w-10 sm:h-10 shrink-0">
-                                  <AvatarFallback className="bg-secondary text-secondary-foreground">
-                                    {apt.patient_name?.split(" ").map(n => n[0]).join("") || "?"}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <User className="w-3 h-3 text-muted-foreground" />
-                                    <p className="font-medium text-foreground text-sm">{apt.patient_name}</p>
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1">
-                                    <div className="flex items-center gap-1">
-                                      <PhoneCall className="w-3 h-3 text-muted-foreground" />
-                                      <p className="text-xs sm:text-sm text-muted-foreground">{apt.patient_phone}</p>
+                                <div className="flex flex-col items-center p-2 sm:p-3 bg-muted/50 rounded-lg min-w-[90px] sm:min-w-[100px] shrink-0">
+                                  <CalendarDays className="w-4 h-4 text-muted-foreground mb-1" />
+                                  <span className="text-xs sm:text-sm font-medium">{format(new Date(apt.preferred_date), "MMM d, yyyy")}</span>
+                                  <span className="text-xs text-muted-foreground capitalize">{apt.preferred_time || "Any time"}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="w-9 h-9 sm:w-10 sm:h-10 shrink-0">
+                                    <AvatarFallback className="bg-secondary text-secondary-foreground">
+                                      {apt.patient_name?.split(" ").map(n => n[0]).join("") || "?"}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <User className="w-3 h-3 text-muted-foreground" />
+                                      <p className="font-medium text-foreground text-sm">{apt.patient_name}</p>
                                     </div>
-                                    {apt.patient_email && (
-                                      <div className="hidden sm:flex items-center gap-1">
-                                        <Mail className="w-3 h-3 text-muted-foreground" />
-                                        <p className="text-sm text-muted-foreground">{apt.patient_email}</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    {apt.doctors && (
+                                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1">
                                       <div className="flex items-center gap-1">
-                                        <Stethoscope className="w-3 h-3 text-muted-foreground" />
-                                        <p className="text-xs text-muted-foreground">{apt.doctors.name}</p>
+                                        <PhoneCall className="w-3 h-3 text-muted-foreground" />
+                                        <p className="text-xs sm:text-sm text-muted-foreground">{apt.patient_phone}</p>
                                       </div>
-                                    )}
-                                    {apt.departments && (
-                                      <Badge variant="outline" className="text-xs">{apt.departments.name}</Badge>
+                                      {apt.patient_email && (
+                                        <div className="hidden sm:flex items-center gap-1">
+                                          <Mail className="w-3 h-3 text-muted-foreground" />
+                                          <p className="text-sm text-muted-foreground">{apt.patient_email}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      {apt.doctors && (
+                                        <div className="flex items-center gap-1">
+                                          <Stethoscope className="w-3 h-3 text-muted-foreground" />
+                                          <p className="text-xs text-muted-foreground">{apt.doctors.name}</p>
+                                        </div>
+                                      )}
+                                      {apt.departments && (
+                                        <Badge variant="outline" className="text-xs">{apt.departments.name}</Badge>
+                                      )}
+                                    </div>
+                                    {apt.notes && (
+                                      <p className="text-xs text-muted-foreground mt-1 italic">"{apt.notes}"</p>
                                     )}
                                   </div>
-                                  {apt.notes && (
-                                    <p className="text-xs text-muted-foreground mt-1 italic">"{apt.notes}"</p>
-                                  )}
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 pl-[calc(90px+12px)] sm:pl-0">
-                              <Badge variant="secondary" className="text-xs capitalize">{apt.appointment_type}</Badge>
-                              <Badge variant="outline" className={statusStyles[apt.status as keyof typeof statusStyles] || statusStyles.pending}>
-                                {apt.status}
-                              </Badge>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                    <MoreHorizontal className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handlePatientAppointmentStatus(apt.id, "confirmed")}>
-                                    <CheckCircle className="w-4 h-4 mr-2 text-success" />
-                                    Confirm Request
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handlePatientAppointmentStatus(apt.id, "cancelled")} className="text-destructive">
-                                    <XCircle className="w-4 h-4 mr-2" />
-                                    Reject Request
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 pl-[calc(90px+12px)] sm:pl-0">
+                                <Badge variant="secondary" className="text-xs capitalize">{apt.appointment_type}</Badge>
+                                <Badge variant="outline" className={statusStyles[apt.status as keyof typeof statusStyles] || statusStyles.pending}>
+                                  {apt.status}
+                                </Badge>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreHorizontal className="w-4 h-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handlePatientAppointmentStatus(apt.id, "confirmed")}>
+                                      <CheckCircle className="w-4 h-4 mr-2 text-success" />
+                                      Confirm Request
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handlePatientAppointmentStatus(apt.id, "cancelled")} className="text-destructive">
+                                      <XCircle className="w-4 h-4 mr-2" />
+                                      Reject Request
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </div>

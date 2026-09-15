@@ -46,6 +46,7 @@ import NurseRounds from "./pages/staff/NurseRounds";
 import CashierDashboard from "./pages/staff/CashierDashboard";
 import AdminAITools from "./pages/admin/AdminAITools";
 import AdminInfo from "./pages/admin/AdminInfo";
+import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
 import Salaries from "./pages/staff/Salaries";
 
 // Emergency System Pages
@@ -137,6 +138,14 @@ const App = () => (
                 element={
                   <StaffProtectedRoute requiredRole="admin">
                     <AdminAITools />
+                  </StaffProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/system-health"
+                element={
+                  <StaffProtectedRoute requiredRole="admin">
+                    <AdminSystemHealth />
                   </StaffProtectedRoute>
                 }
               />

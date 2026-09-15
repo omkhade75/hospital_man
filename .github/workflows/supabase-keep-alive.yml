@@ -1,0 +1,36 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # Run every day at 12:00 PM UTC
+    - cron: "0 12 * * *"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Secrets VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY are not set in GitHub repository secrets."
+            echo "Please add them in Settings > Secrets and variables > Actions."
+            echo "Skipping ping."
+            exit 0
+          fi
+          
+          echo "Pinging Supabase at $SUPABASE_URL..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${SUPABASE_URL}/rest/v1/departments?select=id&limit=1" \
+               -H "apikey: ${SUPABASE_ANON_KEY}" \
+               -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          
+          echo "Response HTTP Status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 204 ]; then
+            echo "Successfully pinged Supabase."
+          else
+            echo "Warning: Received unexpected HTTP status $HTTP_STATUS"
+            exit 1
+          fi
